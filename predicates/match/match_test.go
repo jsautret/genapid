@@ -101,6 +101,14 @@ regexp: A(B+.)D$
 `,
 			expected: false,
 		},
+		{
+			name: "Templating",
+			conf: `
+string: '{{if true}}{{"AAAAAA"| printf "%s"}}{{else}}BBBBB{{end}}'
+fixed:  "AAAAAA"
+`,
+			expected: true,
+		},
 	}
 
 	for _, c := range cases {
@@ -142,11 +150,49 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-//**************** Helpers
+/***************************************************************************
+  Benchmarck: compare predicates with and without templating
+  ***************************************************************************/
+func BenchmarkNoTemplate(b *testing.B) {
+	yaml := `
+string: AAAAAA
+fixed:  AAAAAA
+`
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	conf := getConfB(yaml)
+	ctx := context.Ctx{}
+	for i := 0; i < b.N; i++ {
+		Call(&ctx, conf)
+	}
+
+}
+func BenchmarkWithTemplate(b *testing.B) {
+	yaml := `
+string: '{{if true}}{{"AAAAAA"| printf "%s"}}{{else}}BBBBB{{end}}'
+fixed:  "AAAAAA"
+`
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	conf := getConfB(yaml)
+	ctx := context.Ctx{}
+	for i := 0; i < b.N; i++ {
+		Call(&ctx, conf)
+	}
+
+}
+
+/***************************************************************************
+  Helpers
+  ***************************************************************************/
 func getConf(t *testing.T, source string) conf.Predicate {
 	c := conf.Predicate{}
 	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
 		t.Errorf("Should not have returned parsing error")
 	}
+	return c
+}
+
+func getConfB(source string) conf.Predicate {
+	c := conf.Predicate{}
+	yaml.Unmarshal([]byte(source), &c)
 	return c
 }

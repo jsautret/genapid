@@ -4,7 +4,6 @@ import (
 	"regexp"
 
 	"github.com/jsautret/go-api-broker/context"
-
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/jsautret/go-api-broker/internal/tmpl"
 	"github.com/mitchellh/mapstructure"

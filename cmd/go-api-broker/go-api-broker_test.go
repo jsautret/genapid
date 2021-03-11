@@ -17,8 +17,8 @@ func TestHttpServer(t *testing.T) {
 	tt := []struct {
 		name       string
 		method     string
-		want       string
 		path       string
+		want       string
 		statusCode int
 		conf       string
 	}{
@@ -38,10 +38,10 @@ func TestHttpServer(t *testing.T) {
 - name: "Test simple pipe of match"
   pipe:
   - match:
-      string: "AAAAAA"
+      string: '{{"AAAAAA"| printf "%s"}}'
       fixed:  "AAAAAA"
   - match:
-      string: "BBBAAABBB"
+      string: "{{if true}}BBBAAABBB{{else}}BBBBB{{end}}"
       regexp: "B(A+B)B"
     register: some_test
   - match:
@@ -95,16 +95,76 @@ func TestHttpServer(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
 	os.Exit(m.Run())
 }
 
-//**************** Helpers
+/***************************************************************************
+  Benchmarck: compare predicates with and without templating
+  ***************************************************************************/
+func BenchmarkNoTemplate(b *testing.B) {
+	conf := `
+- name: "Test simple pipe of match without templating"
+  pipe:
+  - match:
+      string: "AAAAAA"
+      fixed:  "AAAAAA"
+  - match:
+      string: "BBBAAABBB"
+      regexp: "B(A+B)B"
+    register: some_test
+  - match:
+      string: "AAAB"
+      fixed: AAAB
+`
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	config = getConfB(conf)
+	request := httptest.NewRequest(http.MethodGet, "/bench", nil)
+	responseRecorder := httptest.NewRecorder()
+	for i := 0; i < b.N; i++ {
+		handler(responseRecorder, request)
+	}
+
+}
+func BenchmarkWithTemplate(b *testing.B) {
+	conf := `
+- name: "Test simple pipe of match with templating"
+  pipe:
+  - match:
+      string: '{{"AAAAAA"| printf "%s"}}'
+      fixed:  "AAAAAA"
+  - match:
+      string: "{{if true}}BBBAAABBB{{else}}BBBBB{{end}}"
+      regexp: "B(A+B)B"
+    register: some_test
+  - match:
+      string: "{{index .R.some_test.matches 1}}"
+      fixed: AAAB
+`
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	config = getConfB(conf)
+	request := httptest.NewRequest(http.MethodGet, "/bench", nil)
+	responseRecorder := httptest.NewRecorder()
+	for i := 0; i < b.N; i++ {
+		handler(responseRecorder, request)
+	}
+
+}
+
+/***************************************************************************
+  Helpers
+  ***************************************************************************/
 func getConf(t *testing.T, source string) conf.Root {
 	c := conf.Root{}
 	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
 		t.Errorf("Should not have returned parsing error")
 	}
+	return c
+}
+
+func getConfB(source string) conf.Root {
+	c := conf.Root{}
+	yaml.Unmarshal([]byte(source), &c)
 	return c
 }
