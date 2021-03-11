@@ -1,74 +1,60 @@
 package jsonrpc
 
 import (
-	"regexp"
+	"encoding/base64"
+	"errors"
 
 	"github.com/jsautret/go-api-broker/context"
-
-	"github.com/jsautret/go-api-broker/internal/tmpl"
-	"github.com/rs/zerolog"
+	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog/log"
-	"github.com/smallfish/simpleyaml"
+	"github.com/ybbus/jsonrpc/v2"
 )
 
-func Call(ctx *context.Ctx, conf *simpleyaml.Yaml) bool {
-	debug := func() *zerolog.Event {
-		return log.Debug().Str("predicate",
-			"jsonrpc")
-	}
-	error := func() *zerolog.Event {
-		return log.Error().Str("predicate",
-			"jsonrpc")
-	}
+type params struct {
+	Url       string
+	Procedure string
+	Params    interface{} `mapstructure:",omitempty"`
+	BasicAuth *basicAuth  `mapstructure:"basic_auth,omitempty"`
+}
+type basicAuth struct {
+	Username, Password string
+}
 
-	if !conf.IsMap() {
-		error().Msg("Malformed conf for predicate 'jsonrpc'")
+func Call(ctx *context.Ctx, config conf.Predicate) bool {
+	log := log.With().Str("predicate", "jsonrpc").Logger()
+
+	var p params
+	if !conf.GetParams(ctx, config, &p) {
+		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
 		return false
 	}
-
-	url, err := conf.Get("url").String()
-	if err != nil {
-		error().Str("missing", "url").
-			Msgf("Missing 'url' field for predicate 'match': %v",
-				err)
-		return false
-	}
-	basic_auth, err := conf.Get("url").String()
-	if err != nil {
-		error().Str("missing", "url").
-			Msgf("Missing 'url' field for predicate 'match': %v",
-				err)
-		return false
-	}
-
-	toMatch, err = tmpl.GetTemplatedString(ctx, "string", toMatch)
-	if err != nil {
-		return false
-	}
-
-	if fixed, err := conf.Get("fixed").String(); err == nil {
-		debug().Str("fixed", fixed).Msg("fixed: " + fixed)
-		return fixed == toMatch
-	}
-	if re, err := conf.Get("regexp").String(); err == nil {
-		debug().Str("regexp", re).Msg("regexp: " + re)
-
-		if r, err := regexp.Compile(re); err != nil {
-			error().Err(err).Msgf("Bad regexp: %v", err)
-			return false
-		} else {
-			if res := r.FindStringSubmatch(toMatch); len(res) == 0 {
-				return false
-			} else {
-				debug().Msgf("Regexp Matched: %v", res)
-				results := make(map[string]interface{})
-				results["matches"] = res
-				ctx.Results = results
-				return true
-			}
+	opts := jsonrpc.RPCClientOpts{}
+	if p.BasicAuth != nil {
+		log.Debug().Msg("Enabling basic auth")
+		auth := map[string]string{
+			"Authorization": "Basic " +
+				base64.StdEncoding.EncodeToString([]byte(
+					p.BasicAuth.Username+":"+
+						p.BasicAuth.Password)),
+		}
+		opts = jsonrpc.RPCClientOpts{
+			CustomHeaders: auth,
 		}
 	}
+	rpcClient := jsonrpc.NewClientWithOpts(p.Url, &opts)
 
-	error().Msg("Missing mandatory field(s) for predicate 'match'")
-	return false
+	var result interface{}
+	var err error
+	if p.Params != nil {
+		err = rpcClient.CallFor(&result, p.Procedure, p.Params)
+	} else {
+		err = rpcClient.CallFor(&result, p.Procedure)
+	}
+	if err != nil {
+		log.Warn().Err(err).Msg("Server returned an error")
+		return false
+	}
+	log.Debug().Interface("result", result).Msg("Server response")
+	ctx.Results["response"] = result
+	return true
 }

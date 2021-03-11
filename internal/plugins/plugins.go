@@ -3,6 +3,7 @@ package plugins
 import (
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/go-api-broker/predicates/jsonrpc"
 	"github.com/jsautret/go-api-broker/predicates/match"
 )
 
@@ -15,6 +16,7 @@ var (
 func init() {
 	available = make(map[string]Plugin)
 	available["match"] = match.Call
+	available["jsonrpc"] = jsonrpc.Call
 }
 
 func Get(name string) (Plugin, bool) {
