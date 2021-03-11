@@ -15,29 +15,33 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 	var plugin plugins.Plugin
 	for k := range p {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
-		if res, isPlugin := plugins.Get(k); isPlugin {
-			if plugin != nil {
+		switch k {
+		case "register":
+			if r, ok := p[k].(string); !ok {
+				log.Error().
+					Msg("bad register, ignoring")
+			} else if register != "" {
 				log.Warn().
-					Msg("Several types of predicate found, ignoring...")
+					Msg("Several 'register' found, " +
+						"using the first one")
 			} else {
-				plugin = res
-				pluginName = k
+				register = r
 			}
-		} else {
-			switch k {
-			case "register":
-				if r, ok := p[k].(string); !ok {
+
+		default:
+			if res, isPlugin := plugins.Get(k); isPlugin {
+				if plugin != nil {
 					log.Error().
-						Msg("bad register, ignoring")
+						Msgf("Found '%v', "+
+							"but '%v' was defined "+
+							"before, ignoring",
+							res, pluginName)
 				} else {
-					if register != "" {
-						log.Warn().
-							Msg("Several 'register' found, ignoring, the others")
-					} else {
-						register = r
-					}
+					plugin = res
+					pluginName = k
 				}
 			}
+
 		}
 	}
 	if plugin == nil {
