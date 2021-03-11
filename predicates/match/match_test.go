@@ -114,7 +114,10 @@ fixed:  "WWWWWW"
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			ctx := context.Ctx{}
+			ctx := context.Ctx{
+				R:       make(map[string]map[string]interface{}),
+				Results: make(map[string]interface{}),
+			}
 			if r := Call(&ctx, conf); r != c.expected {
 				t.Errorf("Should have returned %v, got %v",
 					c.expected, r)
@@ -131,7 +134,10 @@ regexp: A(B+.)D$
 xxx: ccc
 `
 	conf := getConf(t, yaml)
-	ctx := context.Ctx{}
+	ctx := context.Ctx{
+		R:       make(map[string]map[string]interface{}),
+		Results: make(map[string]interface{}),
+	}
 	if res := Call(&ctx, conf); !res {
 		t.Errorf("Should have returned true")
 	} else {
@@ -160,7 +166,10 @@ fixed:  AAAAAA
 `
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	conf := getConfB(yaml)
-	ctx := context.Ctx{}
+	ctx := context.Ctx{
+		R:       make(map[string]map[string]interface{}),
+		Results: make(map[string]interface{}),
+	}
 	for i := 0; i < b.N; i++ {
 		Call(&ctx, conf)
 	}
@@ -172,7 +181,10 @@ fixed:  "AAAAAA"
 `
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	conf := getConfB(yaml)
-	ctx := context.Ctx{}
+	ctx := context.Ctx{
+		R:       make(map[string]map[string]interface{}),
+		Results: make(map[string]interface{}),
+	}
 	for i := 0; i < b.N; i++ {
 		Call(&ctx, conf)
 	}

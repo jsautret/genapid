@@ -56,15 +56,13 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 		log.Error().Err(errors.New("Parameters must be a dict")).Msg("")
 		return false
 	} else {
+		ctx.Results = make(map[string]interface{})
 		result := plugin(ctx, args)
 		if register != "" {
 			log.Debug().Str("register", register).
 				Msgf("Register result to %v", register)
-			ctx.R[register] = make(map[string]interface{})
+			ctx.R[register] = ctx.Results
 			ctx.R[register]["result"] = result
-			for k, v := range ctx.Results {
-				ctx.R[register][k] = v
-			}
 		}
 		return result
 	}

@@ -19,7 +19,10 @@ func Call(ctx *context.Ctx, config conf.Predicate) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
 	var p params
-	conf.GetParams(ctx, config, &p)
+	if !conf.GetParams(ctx, config, &p) {
+		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
+		return false
+	}
 
 	if p.Fixed != "" {
 		log.Debug().Str("fixed", p.Fixed).Msg("")
@@ -36,9 +39,7 @@ func Call(ctx *context.Ctx, config conf.Predicate) bool {
 				return false
 			} else {
 				log.Debug().Msgf("'regexp' matched %v", res)
-				results := make(map[string]interface{})
-				results["matches"] = res
-				ctx.Results = results
+				ctx.Results["matches"] = res
 				return true
 			}
 		}
