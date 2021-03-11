@@ -1,6 +1,8 @@
 package predicate
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/jsautret/go-api-broker/context"
@@ -31,11 +33,10 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 		default:
 			if res, isPlugin := plugins.Get(k); isPlugin {
 				if plugin != nil {
-					log.Error().
-						Msgf("Found '%v', "+
-							"but '%v' was defined "+
-							"before, ignoring",
-							res, pluginName)
+					err := fmt.Errorf("Found both '%v' "+
+						"& '%v', ignoring the later",
+						pluginName, k)
+					log.Error().Err(err).Msg("")
 				} else {
 					plugin = res
 					pluginName = k
@@ -45,15 +46,14 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 		}
 	}
 	if plugin == nil {
-		log.Error().Msg("No plugin name found")
+		log.Error().Err(errors.New("No plugin name found")).Msg("")
 		return false
 	}
 	log := log.With().Str("predicate", pluginName).Logger()
-
 	log.Debug().Msgf("Found predicate '%v'", pluginName)
 
 	if args, ok := p[pluginName].(conf.Predicate); !ok {
-		log.Error().Msg("Parameters must be a dict")
+		log.Error().Err(errors.New("Parameters must be a dict")).Msg("")
 		return false
 	} else {
 		result := plugin(ctx, args)
