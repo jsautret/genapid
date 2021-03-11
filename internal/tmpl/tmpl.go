@@ -10,7 +10,7 @@ import (
 
 func GetTemplatedString(ctx *context.Ctx, name, in string) (string, error) {
 	log := log.With().Str("template", name).Logger()
-	log.Debug().Str("in", in).Msg("")
+	log.Trace().Str("in", in).Msg("")
 
 	tmpl, err := template.New(name).Parse(in)
 	if err != nil {
@@ -25,6 +25,6 @@ func GetTemplatedString(ctx *context.Ctx, name, in string) (string, error) {
 
 	}
 	result := buf.String()
-	log.Debug().Str("out", result).Msg("")
+	log.Trace().Str("out", result).Msg("")
 	return result, nil
 }

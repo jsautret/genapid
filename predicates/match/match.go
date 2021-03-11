@@ -44,7 +44,6 @@ func Call(ctx *context.Ctx, config conf.Predicate) bool {
 			}
 		}
 	}
-
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp' " +
 		"for predicate 'match'"))
 	return false
