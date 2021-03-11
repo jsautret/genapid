@@ -104,8 +104,8 @@ regexp: A(B+.)D$
 		{
 			name: "Templating",
 			conf: `
-string: '{{if true}}{{"AAAAAA"| printf "%s"}}{{else}}BBBBB{{end}}'
-fixed:  "AAAAAA"
+string: '{{if true}}{{"WWWWWW"| printf "%s"}}{{else}}XXXXXX{{end}}'
+fixed:  "WWWWWW"
 `,
 			expected: true,
 		},
@@ -164,7 +164,6 @@ fixed:  AAAAAA
 	for i := 0; i < b.N; i++ {
 		Call(&ctx, conf)
 	}
-
 }
 func BenchmarkWithTemplate(b *testing.B) {
 	yaml := `

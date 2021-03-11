@@ -1,16 +1,15 @@
 package match
 
 import (
+	"errors"
 	"regexp"
 
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/tmpl"
-	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog/log"
 )
 
-type fields struct {
+type params struct {
 	String string
 	Fixed  string
 	Regexp string
@@ -19,33 +18,24 @@ type fields struct {
 func Call(ctx *context.Ctx, config conf.Predicate) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
-	var f fields
-	if err := mapstructure.Decode(config, &f); err != nil {
-		log.Error().Msgf("Incorrect fields for predicate 'match': %v",
-			err)
-		return false
-	}
+	var p params
+	conf.GetParams(ctx, config, &p)
 
-	str, err := tmpl.GetTemplatedString(ctx, "string", f.String)
-	if err != nil {
-		return false // already logged in tmpl
+	if p.Fixed != "" {
+		log.Debug().Str("fixed", p.Fixed).Msg("")
+		return p.Fixed == p.String
 	}
+	if p.Regexp != "" {
+		log.Debug().Str("regexp", p.Regexp).Msg("")
 
-	if f.Fixed != "" {
-		log.Debug().Str("fixed", f.Fixed).Msg("fixed: " + f.Fixed)
-		return f.Fixed == str
-	}
-	if f.Regexp != "" {
-		log.Debug().Str("regexp", f.Regexp).Msg("regexp: " + f.Regexp)
-
-		if r, err := regexp.Compile(f.Regexp); err != nil {
-			log.Error().Err(err).Msgf("Bad regexp: %v", err)
+		if r, err := regexp.Compile(p.Regexp); err != nil {
+			log.Error().Err(err).Msg("invalid 'regexp'")
 			return false
 		} else {
-			if res := r.FindStringSubmatch(str); len(res) == 0 {
+			if res := r.FindStringSubmatch(p.String); len(res) == 0 {
 				return false
 			} else {
-				log.Debug().Msgf("Regexp Matched: %v", res)
+				log.Debug().Msgf("'regexp' matched %v", res)
 				results := make(map[string]interface{})
 				results["matches"] = res
 				ctx.Results = results
@@ -54,6 +44,7 @@ func Call(ctx *context.Ctx, config conf.Predicate) bool {
 		}
 	}
 
-	log.Error().Msg("Missing one of 'fixed' or 'regexp' for predicate 'match'")
+	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp' " +
+		"for predicate 'match'"))
 	return false
 }
