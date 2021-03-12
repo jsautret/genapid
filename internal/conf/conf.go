@@ -18,7 +18,8 @@ type Pipe struct {
 	Name string
 	Pipe []Predicate
 }
-type Predicate map[string]interface{}
+type Predicate map[string]yaml.Node
+type Params map[string]interface{}
 
 func Read(filename string) Root {
 	source, err := ioutil.ReadFile(filename)
@@ -29,6 +30,7 @@ func Read(filename string) Root {
 	if err := yaml.Unmarshal(source, &conf); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
+	log.Debug().Msgf("JJJJJ %v (%v)", conf[0].Pipe[0]["jsonrpc"], reflect.TypeOf(conf[0].Pipe[0]["jsonrpc"]))
 	return conf
 }
 
@@ -42,7 +44,7 @@ func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 }
 
-func GetParams(ctx *context.Ctx, config Predicate, params interface{}) bool {
+func GetParams(ctx *context.Ctx, config Params, params interface{}) bool {
 	c := mapstructure.DecoderConfig{
 		DecodeHook: hookTemplate(ctx),
 		Result:     params,

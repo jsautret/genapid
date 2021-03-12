@@ -3,6 +3,7 @@ package jsonrpc
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
@@ -20,12 +21,16 @@ type basicAuth struct {
 	Username, Password string
 }
 
-func Call(ctx *context.Ctx, config conf.Predicate) bool {
+func Call(ctx *context.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
 	var p params
 	if !conf.GetParams(ctx, config, &p) {
-		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
+		log.Error().Err(errors.New("Invalid params")).Msg("")
+		return false
+	}
+	if p.Url == "" || p.Procedure == "" {
+		log.Error().Err(errors.New("Missing parameters")).Msg("")
 		return false
 	}
 	opts := jsonrpc.RPCClientOpts{}
@@ -42,19 +47,31 @@ func Call(ctx *context.Ctx, config conf.Predicate) bool {
 		}
 	}
 	rpcClient := jsonrpc.NewClientWithOpts(p.Url, &opts)
-
 	var result interface{}
 	var err error
 	if p.Params != nil {
-		err = rpcClient.CallFor(&result, p.Procedure, p.Params)
+		err = rpcClient.CallFor(&result, p.Procedure, getParams(p.Params))
 	} else {
 		err = rpcClient.CallFor(&result, p.Procedure)
 	}
 	if err != nil {
-		log.Warn().Err(err).Msg("Server returned an error")
+		log.Warn().Err(err).Msg("jsonrpc call error")
 		return false
 	}
 	log.Debug().Interface("result", result).Msg("Server response")
 	ctx.Results["response"] = result
 	return true
+}
+
+// Try to convert params to something that be marshalled in json
+func getParams(p interface{}) interface{} {
+	if params, ok := p.(map[interface{}]interface{}); ok {
+		mapString := make(map[string]interface{})
+		for key, value := range params {
+			strKey := fmt.Sprintf("%v", key)
+			mapString[strKey] = value
+		}
+		return mapString
+	}
+	return p
 }

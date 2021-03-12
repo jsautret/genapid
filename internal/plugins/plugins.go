@@ -7,7 +7,7 @@ import (
 	"github.com/jsautret/go-api-broker/predicates/match"
 )
 
-type Plugin func(*context.Ctx, conf.Predicate) bool
+type Plugin func(*context.Ctx, conf.Params) bool
 
 var (
 	available map[string]Plugin

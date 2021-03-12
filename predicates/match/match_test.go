@@ -11,6 +11,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var logLevel = zerolog.FatalLevel
+
+//var logLevel = zerolog.DebugLevel
+
 func TestMatch(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -150,7 +154,7 @@ xxx: ccc
 }
 
 func TestMain(m *testing.M) {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	zerolog.SetGlobalLevel(logLevel)
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
 		With().Caller().Timestamp().Logger()
 	os.Exit(m.Run())
@@ -164,7 +168,7 @@ func BenchmarkNoTemplate(b *testing.B) {
 string: AAAAAA
 fixed:  AAAAAA
 `
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	zerolog.SetGlobalLevel(logLevel)
 	conf := getConfB(yaml)
 	ctx := context.Ctx{
 		R:       make(map[string]map[string]interface{}),
@@ -179,7 +183,7 @@ func BenchmarkWithTemplate(b *testing.B) {
 string: '{{if true}}{{"AAAAAA"| printf "%s"}}{{else}}BBBBB{{end}}'
 fixed:  "AAAAAA"
 `
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	zerolog.SetGlobalLevel(logLevel)
 	conf := getConfB(yaml)
 	ctx := context.Ctx{
 		R:       make(map[string]map[string]interface{}),
@@ -194,16 +198,16 @@ fixed:  "AAAAAA"
 /***************************************************************************
   Helpers
   ***************************************************************************/
-func getConf(t *testing.T, source string) conf.Predicate {
-	c := conf.Predicate{}
+func getConf(t *testing.T, source string) conf.Params {
+	c := conf.Params{}
 	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
 		t.Errorf("Should not have returned parsing error")
 	}
 	return c
 }
 
-func getConfB(source string) conf.Predicate {
-	c := conf.Predicate{}
+func getConfB(source string) conf.Params {
+	c := conf.Params{}
 	yaml.Unmarshal([]byte(source), &c)
 	return c
 }

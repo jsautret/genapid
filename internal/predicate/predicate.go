@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jsautret/go-api-broker/context"
+	"gopkg.in/yaml.v3"
 
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/jsautret/go-api-broker/internal/plugins"
@@ -19,30 +20,9 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
 		switch k {
 		case "register":
-			if r, ok := p[k].(string); !ok {
-				log.Error().
-					Msg("bad register, ignoring")
-			} else if register != "" {
-				log.Warn().
-					Msg("Several 'register' found, " +
-						"using the first one")
-			} else {
-				register = r
-			}
-
+			assignRegister(&register, p[k])
 		default:
-			if res, isPlugin := plugins.Get(k); isPlugin {
-				if plugin != nil {
-					err := fmt.Errorf("Found both '%v' "+
-						"& '%v', ignoring the later",
-						pluginName, k)
-					log.Error().Err(err).Msg("")
-				} else {
-					plugin = res
-					pluginName = k
-				}
-			}
-
+			assignPlugin(&plugin, &pluginName, k)
 		}
 	}
 	if plugin == nil {
@@ -52,8 +32,10 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 	log := log.With().Str("predicate", pluginName).Logger()
 	log.Debug().Msgf("Found predicate '%v'", pluginName)
 
-	if args, ok := p[pluginName].(conf.Predicate); !ok {
-		log.Error().Err(errors.New("Parameters must be a dict")).Msg("")
+	var args conf.Params
+	argsNode := p[pluginName]
+	if err := argsNode.Decode(&args); err != nil {
+		log.Error().Err(err).Msg("Parameters must be a dict")
 		return false
 	} else {
 		ctx.Results = make(map[string]interface{})
@@ -65,5 +47,30 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 			ctx.R[register]["result"] = result
 		}
 		return result
+	}
+}
+
+func assignRegister(register *string, n yaml.Node) {
+	if *register != "" {
+		log.Warn().Msg("Several 'register' declared, " +
+			"using the first found")
+		return
+	}
+	if err := n.Decode(register); err != nil {
+		log.Error().Err(err).Msg("invalid register")
+	}
+}
+
+func assignPlugin(plugin *plugins.Plugin, pluginName *string, k string) {
+	if *plugin != nil {
+		err := fmt.Errorf("Found both '%v' & '%v', "+
+			"ignoring the later",
+			*pluginName, k)
+		log.Error().Err(err).Msg("")
+		return
+	}
+	if res, isPlugin := plugins.Get(k); isPlugin {
+		*plugin = res
+		*pluginName = k
 	}
 }

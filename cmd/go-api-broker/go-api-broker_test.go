@@ -13,6 +13,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var logLevel = zerolog.FatalLevel
+
+//var logLevel = zerolog.DebugLevel
+
 func TestHttpServer(t *testing.T) {
 	tt := []struct {
 		name       string
@@ -94,7 +98,7 @@ func TestHttpServer(t *testing.T) {
 // TODO: test log content with https://github.com/rzajac/zltest
 
 func TestMain(m *testing.M) {
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	zerolog.SetGlobalLevel(logLevel)
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
 		With().Caller().Timestamp().Logger()
 	os.Exit(m.Run())
@@ -118,7 +122,7 @@ func BenchmarkNoTemplate(b *testing.B) {
       string: "AAAB"
       fixed: AAAB
 `
-	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	zerolog.SetGlobalLevel(logLevel)
 	config = getConfB(conf)
 	request := httptest.NewRequest(http.MethodGet, "/bench", nil)
 	responseRecorder := httptest.NewRecorder()

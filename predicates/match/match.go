@@ -15,7 +15,7 @@ type params struct {
 	Regexp string
 }
 
-func Call(ctx *context.Ctx, config conf.Predicate) bool {
+func Call(ctx *context.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
 	var p params
