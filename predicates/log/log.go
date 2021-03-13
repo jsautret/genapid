@@ -2,6 +2,7 @@ package log
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
@@ -9,7 +10,7 @@ import (
 )
 
 type params struct {
-	Msg string
+	Msg interface{}
 }
 
 func Call(ctx *context.Ctx, config conf.Params) bool {
@@ -21,7 +22,7 @@ func Call(ctx *context.Ctx, config conf.Params) bool {
 		return false
 	}
 
-	log.Info().Str("msg", p.Msg).Msg("")
+	log.Info().Str("msg", fmt.Sprintf("%v", p.Msg)).Msg("")
 
 	return true
 }
