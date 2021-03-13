@@ -3,8 +3,6 @@ package tmpl
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"os"
 	"text/template"
 
 	ctx "github.com/jsautret/go-api-broker/context"
@@ -39,20 +37,21 @@ func GetTemplatedString(ctx *ctx.Ctx, name, in string) (string, error) {
 }
 
 func init() {
-	t = template.New("string").Funcs(sprig.TxtFuncMap())
+	t = template.New("string").Funcs(sprig.TxtFuncMap()).
+		Funcs(template.FuncMap{"jsonpath": jsonpath})
 }
 
-func jsonpath(json interface{}, path string) interface{} {
+func jsonpath(path string, json interface{}) interface{} {
 	builder := gval.Full(jsonpathlib.PlaceholderExtension())
 	p, err := builder.NewEvaluable(path)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Error().Err(err).Msg("Cannot evaluate gval")
+		return `""`
 	}
 	res, err := p(context.Background(), json)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Error().Err(err).Msg("Cannot evaluate jsonpath")
+		return `""`
 	}
 	return res
 }
