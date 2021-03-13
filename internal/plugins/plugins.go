@@ -3,9 +3,8 @@ package plugins
 import (
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/predicates/jsonrpc"
-	"github.com/jsautret/go-api-broker/predicates/log"
-	"github.com/jsautret/go-api-broker/predicates/match"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Plugin func(*context.Ctx, conf.Params) bool
@@ -14,16 +13,17 @@ var (
 	available map[string]Plugin
 )
 
-func init() {
-	available = make(map[string]Plugin)
-	available["match"] = match.Call
-	available["jsonrpc"] = jsonrpc.Call
-	available["log"] = log.Call
-}
-
 func Get(name string) (Plugin, bool) {
 	if p, ok := available[name]; ok {
 		return p, true
 	}
 	return nil, false
+}
+
+func Add(name string, p Plugin) {
+	if available == nil {
+		available = make(map[string]Plugin)
+	}
+	log.Info().Str("plugin", name).Msg("Plugin enabled")
+	available[name] = p
 }

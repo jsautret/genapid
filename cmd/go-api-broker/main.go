@@ -48,7 +48,7 @@ func init() {
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	//log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
