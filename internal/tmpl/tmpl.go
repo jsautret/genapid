@@ -3,6 +3,8 @@ package tmpl
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"sort"
 	"text/template"
 
 	ctx "github.com/jsautret/go-api-broker/context"
@@ -10,6 +12,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/PaesslerAG/gval"
 	jsonpathlib "github.com/PaesslerAG/jsonpath"
+	fuzzysearch "github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/rs/zerolog/log"
 )
 
@@ -38,7 +41,10 @@ func GetTemplatedString(ctx *ctx.Ctx, name, in string) (string, error) {
 
 func init() {
 	t = template.New("string").Funcs(sprig.TxtFuncMap()).
-		Funcs(template.FuncMap{"jsonpath": jsonpath})
+		Funcs(template.FuncMap{
+			"jsonpath": jsonpath,
+			"fuzzy":    fuzzy,
+		})
 }
 
 func jsonpath(path string, json interface{}) interface{} {
@@ -54,4 +60,25 @@ func jsonpath(path string, json interface{}) interface{} {
 		return `""`
 	}
 	return res
+}
+
+func fuzzy(source string, targets []interface{}) string {
+	matches := fuzzysearch.RankFindNormalizedFold(
+		source, toStrings(targets))
+	sort.Sort(matches)
+	return matches[0].Target
+}
+
+func toStrings(l []interface{}) []string {
+	ls := make([]string, len(l))
+	for i := 0; i < len(l); i++ {
+		e, ok := l[i].(string)
+		if !ok {
+			err := fmt.Errorf("element is not string: %v", l[i])
+			log.Error().Err(err).Msg("")
+			return []string{}
+		}
+		ls[i] = e
+	}
+	return ls
 }
