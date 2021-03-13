@@ -21,6 +21,8 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 		switch k {
 		case "register":
 			assignRegister(&register, p[k])
+		case "set":
+			processSet(ctx, p[k])
 		default:
 			assignPlugin(&plugin, &pluginName, k)
 		}
@@ -57,7 +59,30 @@ func assignRegister(register *string, n yaml.Node) {
 		return
 	}
 	if err := n.Decode(register); err != nil {
-		log.Error().Err(err).Msg("invalid register")
+		log.Error().Err(err).Msg("invalid 'register'")
+	}
+}
+
+func processSet(ctx *context.Ctx, n yaml.Node) {
+	var args []conf.Params
+	if err := n.Decode(&args); err != nil {
+		log.Error().Err(err).Msg("'set' parameters must be a dict")
+		return
+	}
+	for i := 0; i < len(args); i++ {
+		for k := range args[i] {
+			var field map[string]interface{}
+			arg := make(conf.Params)
+			arg[k] = args[i][k]
+			if !conf.GetParams(ctx, arg, &field) {
+				log.Error().
+					Err(fmt.Errorf("Invalid value for %v", k)).
+					Msg("")
+				continue
+			}
+			log.Trace().Msgf("set %v='%v'", k, field[k])
+			ctx.V[k] = field[k]
+		}
 	}
 }
 

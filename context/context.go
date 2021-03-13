@@ -18,12 +18,18 @@ type Ctx struct {
 	Url *Url
 
 	// Registered Contexts
-	R map[string]map[string]interface{}
+	R Registered
+
+	// Variables
+	V Variables
 
 	// Return
-	Results map[string]interface{}
+	Results Results
 }
 
 type Url struct {
 	Params url.Values //map[string]string
 }
+type Registered map[string]map[string]interface{}
+type Variables map[string]interface{}
+type Results map[string]interface{}

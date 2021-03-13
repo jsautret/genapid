@@ -25,7 +25,8 @@ func Process(p conf.Pipe, r *http.Request) bool {
 	ctx := &context.Ctx{
 		Req: r,
 		Url: url,
-		R:   make(map[string]map[string]interface{}),
+		R:   make(context.Registered),
+		V:   make(context.Variables),
 	}
 
 	var result bool

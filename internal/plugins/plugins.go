@@ -22,7 +22,7 @@ func Get(name string) (Plugin, bool) {
 
 func Add(name string, p Plugin) {
 	if available == nil {
-		available = make(map[string]Plugin)
+		available = make(map[string]Plugin, 20)
 	}
 	log.Info().Str("plugin", name).Msg("Plugin enabled")
 	available[name] = p
