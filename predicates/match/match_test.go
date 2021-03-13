@@ -62,7 +62,7 @@ fixed: ABCD
 string: ""
 fixed: ""
 `,
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "FixedAndRegexp",
@@ -79,7 +79,7 @@ regexp: "XXX"
 string: ""
 regexp: ""
 `,
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "BadRegexp",

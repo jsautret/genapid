@@ -6,6 +6,7 @@ import (
 
 	"github.com/jsautret/go-api-broker/context"
 	"github.com/jsautret/go-api-broker/internal/conf"
+
 	"github.com/rs/zerolog/log"
 )
 
