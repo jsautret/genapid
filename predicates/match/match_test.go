@@ -171,7 +171,7 @@ func TestMain(m *testing.M) {
 /***************************************************************************
   Benchmarck: compare predicates with and without templating
   ***************************************************************************/
-func BenchmarkNoTemplate(b *testing.B) {
+func BenchmarkNoGval(b *testing.B) {
 	yaml := `
 string: AAAAAA
 fixed:  AAAAAA
@@ -186,7 +186,7 @@ fixed:  AAAAAA
 		Call(&ctx, conf)
 	}
 }
-func BenchmarkWithTemplate(b *testing.B) {
+func BenchmarkWithGval(b *testing.B) {
 	yaml := `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"

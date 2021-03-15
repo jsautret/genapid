@@ -19,6 +19,7 @@ type Predicate map[string]yaml.Node
 type Params map[string]interface{}
 
 func Read(filename string) Root {
+	log.Info().Str("filename", filename).Msg("Reading configuration file")
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal().Err(err).Msg("")

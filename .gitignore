@@ -1,1 +1,2 @@
 *.out
+/cmd/go-api-broker/go-api-broker
