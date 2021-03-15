@@ -1,13 +1,13 @@
 package plugins
 
 import (
-	"github.com/jsautret/go-api-broker/context"
+	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 
 	"github.com/rs/zerolog/log"
 )
 
-type Plugin func(*context.Ctx, conf.Params) bool
+type Plugin func(*ctx.Ctx, conf.Params) bool
 
 var (
 	available map[string]Plugin

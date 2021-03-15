@@ -1,4 +1,4 @@
-package context
+package ctx
 
 import (
 	"net/http"
@@ -33,3 +33,20 @@ type Url struct {
 type Registered map[string]map[string]interface{}
 type Variables map[string]interface{}
 type Results map[string]interface{}
+
+func (c *Ctx) ToInterface() interface{} {
+	type ctx struct {
+		Req     *http.Request
+		Url     *Url
+		R       map[string]map[string]interface{}
+		V       map[string]interface{}
+		Results map[string]interface{}
+	}
+	return ctx{
+		Req:     c.Req,
+		Url:     c.Url,
+		R:       map[string]map[string]interface{}(c.R),
+		V:       map[string]interface{}(c.V),
+		Results: map[string]interface{}(c.Results),
+	}
+}

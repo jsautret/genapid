@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jsautret/go-api-broker/context"
+	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -120,7 +120,7 @@ basic_auth:
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			ctx := context.Ctx{
+			ctx := ctx.Ctx{
 				R:       make(map[string]map[string]interface{}),
 				Results: make(map[string]interface{}),
 			}

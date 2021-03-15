@@ -2,13 +2,10 @@ package conf
 
 import (
 	"io/ioutil"
-	"os"
 	"reflect"
 
-	"github.com/jsautret/go-api-broker/context"
-	"github.com/jsautret/go-api-broker/internal/tmpl"
+	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -30,23 +27,12 @@ func Read(filename string) Root {
 	if err := yaml.Unmarshal(source, &conf); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
-	log.Debug().Msgf("JJJJJ %v (%v)", conf[0].Pipe[0]["jsonrpc"], reflect.TypeOf(conf[0].Pipe[0]["jsonrpc"]))
 	return conf
 }
 
-func init() {
-	// UNIX Time is faster and smaller than most timestamps
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-
-	zerolog.SetGlobalLevel(zerolog.TraceLevel)
-
-	//log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-}
-
-func GetParams(ctx *context.Ctx, config Params, params interface{}) bool {
+func GetParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 	c := mapstructure.DecoderConfig{
-		DecodeHook: hookTemplate(ctx),
+		DecodeHook: hookGval(ctx),
 		Result:     params,
 	}
 	if decode, err := mapstructure.NewDecoder(&c); err != nil {
@@ -59,10 +45,21 @@ func GetParams(ctx *context.Ctx, config Params, params interface{}) bool {
 	return true
 }
 
-func hookTemplate(ctx *context.Ctx) func(from, to reflect.Type, data interface{}) (interface{}, error) {
+func hookGval(c *ctx.Ctx) func(from, to reflect.Type, data interface{}) (interface{}, error) {
 	return func(from, to reflect.Type, data interface{}) (interface{}, error) {
+		log.Trace().Interface("hook data", data).Msg("")
+		log.Trace().Msgf("hook from: %v", from.Kind())
+		log.Trace().Msgf("hook to: %v", to.Kind())
 		if from.Kind() == reflect.String {
-			return tmpl.GetTemplatedString(ctx, from.Name(), data.(string))
+			return convertGval(data.(string), c)
+		}
+		if to.Kind() == reflect.Interface &&
+			(from.Kind() == reflect.Map || from.Kind() == reflect.Slice) {
+			// data will not be traversed by mapstructure,
+			// so we do it here
+			r := convert(data, c)
+			log.Trace().Msgf("hook translated: %v", r)
+			return r, nil
 		}
 		return data, nil
 	}

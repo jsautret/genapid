@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jsautret/go-api-broker/context"
+	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -62,7 +62,7 @@ fixed: ABCD
 string: ""
 fixed: ""
 `,
-			expected: true,
+			expected: false,
 		},
 		{
 			name: "FixedAndRegexp",
@@ -79,7 +79,7 @@ regexp: "XXX"
 string: ""
 regexp: ""
 `,
-			expected: true,
+			expected: false,
 		},
 		{
 			name: "BadRegexp",
@@ -108,8 +108,16 @@ regexp: A(B+.)D$
 		{
 			name: "Templating",
 			conf: `
-string: '{{if true}}{{"WWWWWW"| printf "%s"}}{{else}}XXXXXX{{end}}'
-fixed:  "WWWWWW"
+string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
+fixed:  "WWWWAA"
+`,
+			expected: true,
+		},
+		{
+			name: "jsonpath",
+			conf: `
+string: '= {"name": "value"}| $.name'
+fixed:  "value"
 `,
 			expected: true,
 		},
@@ -118,7 +126,7 @@ fixed:  "WWWWWW"
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			ctx := context.Ctx{
+			ctx := ctx.Ctx{
 				R:       make(map[string]map[string]interface{}),
 				Results: make(map[string]interface{}),
 			}
@@ -138,7 +146,7 @@ regexp: A(B+.)D$
 xxx: ccc
 `
 	conf := getConf(t, yaml)
-	ctx := context.Ctx{
+	ctx := ctx.Ctx{
 		R:       make(map[string]map[string]interface{}),
 		Results: make(map[string]interface{}),
 	}
@@ -170,7 +178,7 @@ fixed:  AAAAAA
 `
 	zerolog.SetGlobalLevel(logLevel)
 	conf := getConfB(yaml)
-	ctx := context.Ctx{
+	ctx := ctx.Ctx{
 		R:       make(map[string]map[string]interface{}),
 		Results: make(map[string]interface{}),
 	}
@@ -180,12 +188,12 @@ fixed:  AAAAAA
 }
 func BenchmarkWithTemplate(b *testing.B) {
 	yaml := `
-string: '{{if true}}{{"AAAAAA"| printf "%s"}}{{else}}BBBBB{{end}}'
-fixed:  "AAAAAA"
+string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
+fixed:  "WWWWAA"
 `
 	zerolog.SetGlobalLevel(logLevel)
 	conf := getConfB(yaml)
-	ctx := context.Ctx{
+	ctx := ctx.Ctx{
 		R:       make(map[string]map[string]interface{}),
 		Results: make(map[string]interface{}),
 	}

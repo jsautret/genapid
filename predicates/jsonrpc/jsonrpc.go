@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jsautret/go-api-broker/context"
+	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog/log"
 	"github.com/ybbus/jsonrpc/v2"
@@ -21,7 +21,7 @@ type basicAuth struct {
 	Username, Password string
 }
 
-func Call(ctx *context.Ctx, config conf.Params) bool {
+func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
 	var p params

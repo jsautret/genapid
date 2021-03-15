@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jsautret/go-api-broker/context"
+	"github.com/jsautret/go-api-broker/ctx"
 	"gopkg.in/yaml.v3"
 
 	"github.com/jsautret/go-api-broker/internal/conf"
@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
+func Process(p conf.Predicate, ctx *ctx.Ctx, r *http.Request) bool {
 	var register, pluginName string
 	var plugin plugins.Plugin
 	for k := range p {
@@ -42,6 +42,7 @@ func Process(p conf.Predicate, ctx *context.Ctx, r *http.Request) bool {
 	} else {
 		ctx.Results = make(map[string]interface{})
 		result := plugin(ctx, args)
+		log.Debug().Bool("value", result).Msg("End predicate")
 		if register != "" {
 			log.Debug().Str("register", register).
 				Msgf("Register result to %v", register)
@@ -63,7 +64,7 @@ func assignRegister(register *string, n yaml.Node) {
 	}
 }
 
-func processSet(ctx *context.Ctx, n yaml.Node) {
+func processSet(ctx *ctx.Ctx, n yaml.Node) {
 	var args []conf.Params
 	if err := n.Decode(&args); err != nil {
 		log.Error().Err(err).Msg("'set' parameters must be a dict")

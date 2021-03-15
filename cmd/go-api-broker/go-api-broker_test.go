@@ -15,7 +15,7 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.DebugLevel
+//var logLevel = zerolog.TraceLevel
 
 func TestHttpServer(t *testing.T) {
 	tt := []struct {
@@ -27,34 +27,37 @@ func TestHttpServer(t *testing.T) {
 		conf       string
 	}{
 		{
-			name:       "Empty conf",
+			name:       "EmptyConf",
 			method:     http.MethodGet,
-			path:       "/",
+			path:       "/EmptyConf",
 			statusCode: http.StatusNotFound,
 			conf:       "",
 		},
 		{
-			name:       "Pipe of match",
+			name:       "PipeOfMatch",
 			method:     http.MethodGet,
-			path:       "/",
+			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
 			conf: `
 - name: "Test simple pipe of match"
   pipe:
   - match:
-      string: '{{"AAAAAA"| printf "%s"}}'
+      string:  AAAAAA
       fixed:  "AAAAAA"
   - match:
-      string: "{{if true}}BBBAAABBB{{else}}BBBBB{{end}}"
+      string:  ="CCCCC"
+      fixed:  CCCCC
+  - match:
+      string: '=(-1<0 ? "BBBAAABBB" : "BBBBB")'
       regexp: "B(A+B)B"
     register: some_test
   - match:
-      string: "{{index .R.some_test.matches 1}}"
+      string: =R.some_test.matches[1]
       fixed: AAAB
 `,
 		},
 		{
-			name:       "Incoming HTTP matching",
+			name:       "IncomingHttpMatching",
 			method:     http.MethodPost,
 			path:       "/test?param1=value1&param2=value2",
 			statusCode: http.StatusOK,
@@ -62,14 +65,14 @@ func TestHttpServer(t *testing.T) {
 - name: "Test pipe of match on incoming request"
   pipe:
   - match:
-      string: "{{.Req.Method}}"
+      string: =Req.Method
       fixed: POST
   - match:
-      string: "{{.Url.Params.param2}}"
-      regexp: value2
+      string: =Url.Params.param2[0]
+      fixed: value2
   - match:
-      string: "{{.Url.Params.param1}}"
-      regexp: value1
+      string: =Url.Params.param1[0]
+      regexp: value[1-9]
 `,
 		},
 	}
@@ -101,15 +104,17 @@ func TestMain(m *testing.M) {
 	zerolog.SetGlobalLevel(logLevel)
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
 		With().Caller().Timestamp().Logger()
+	//log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
 	os.Exit(m.Run())
 }
 
 /***************************************************************************
-  Benchmarck: compare predicates with and without templating
+  Benchmarck: compare predicates with and without gval
   ***************************************************************************/
 func BenchmarkNoTemplate(b *testing.B) {
 	conf := `
-- name: "Test simple pipe of match without templating"
+- name: "Test simple pipe of match without expressions"
   pipe:
   - match:
       string: "AAAAAA"
@@ -133,17 +138,17 @@ func BenchmarkNoTemplate(b *testing.B) {
 }
 func BenchmarkWithTemplate(b *testing.B) {
 	conf := `
-- name: "Test simple pipe of match with templating"
+- name: "Test simple pipe of match with expressions"
   pipe:
   - match:
-      string: '{{"AAAAAA"| printf "%s"}}'
+      string: ="AAAAAA"
       fixed:  "AAAAAA"
   - match:
-      string: "{{if true}}BBBAAABBB{{else}}BBBBB{{end}}"
+      string: '= (-2 < -1 ? "BBBAAABBB" : "BBBBB" )'
       regexp: "B(A+B)B"
     register: some_test
   - match:
-      string: "{{index .R.some_test.matches 1}}"
+      string: '= R.some_test.matches[1]'
       fixed: AAAB
 `
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
@@ -161,9 +166,11 @@ func BenchmarkWithTemplate(b *testing.B) {
   ***************************************************************************/
 func getConf(t *testing.T, source string) conf.Root {
 	c := conf.Root{}
+	//log.Debug().Str("source", source).Msg("XXX")
 	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
-		t.Errorf("Should not have returned parsing error")
+		t.Fatalf("YAML parsing: %v", err)
 	}
+	//log.Debug().Interface("yaml", c).Msg("XXX")
 	return c
 }
 
