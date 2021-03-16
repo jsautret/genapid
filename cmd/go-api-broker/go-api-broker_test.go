@@ -115,6 +115,30 @@ func TestHttpServer(t *testing.T) {
   - match:
 `,
 		},
+		{
+			name:       "ImbricatedPipes",
+			method:     http.MethodGet,
+			path:       "/ImbricatedPipes",
+			statusCode: http.StatusOK,
+			conf: `
+- name: "Test imbricated Pipes"
+  pipe:
+  - default:
+      match:
+        string: imbricated
+  - name: subPipe1
+    pipe:
+    - match:
+        fixed:  imbricated
+    - match:
+        string: A
+        fixed: B
+  # top-level pipe will continue
+  # even if predicate fails in sub-pipe
+  - match:
+      fixed: imbricated
+`,
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/pipe"
+	"github.com/jsautret/go-api-broker/internal/predicate"
 	"github.com/rs/zerolog/log"
 )
 
@@ -49,9 +49,11 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 	// Process each pipe
 	var res bool
 	for i := 0; i < len(config); i++ {
-		res = pipe.Process(config[i], &c)
+		res = predicate.ProcessPipe(config[i], &c)
 	}
 	log.Debug().Str("http", "end").Str("path", r.URL.Path).
 		Msg("HTTP request processed")
+	// return result of last predicate in pipe
+	// used for tests
 	return res
 }

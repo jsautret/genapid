@@ -255,8 +255,7 @@ func toJson(in interface{}) (map[string]interface{}, error) {
 // Add a fuzzy(string, stringList) function to Gval that returns the
 // best fuzzy match from the list
 func fuzzyFunction() gval.Language {
-	return gval.Function("fuzzy", func(arguments ...interface{})
-		(interface{}, error) {
+	return gval.Function("fuzzy", func(arguments ...interface{}) (interface{}, error) {
 		if len(arguments) != 2 {
 			return nil,
 				fmt.Errorf("fuzzy() expects exactly two arguments")

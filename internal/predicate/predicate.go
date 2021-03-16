@@ -15,8 +15,9 @@ import (
 // Evaluate a predicate from its parameters (from conf file) and
 // current context
 func Process(p conf.Predicate, c *ctx.Ctx) bool {
-	var register, pluginName string
+	var register, pluginName, name string
 	var plugin plugins.Plugin
+	var pipe conf.Pipe
 	for k := range p {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
 		switch k {
@@ -24,12 +25,30 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 			assignRegister(&register, p[k])
 		case "set":
 			processSet(c, p[k])
+		case "pipe":
+			assignPipe(&pipe, p[k])
+		case "name":
+			n := p[k]
+			if err := n.Decode(&name); err != nil {
+				log.Error().Err(err).Msg("invalid 'name'")
+			}
 		default:
 			assignPlugin(&plugin, &pluginName, k)
 		}
 	}
+	if plugin != nil && pipe.Pipe != nil {
+		log.Error().Err(fmt.Errorf("Both 'pipe' & '%v' declared",
+			pluginName)).Msg("")
+		return false
+	}
+	if pipe.Pipe != nil {
+		pipe.Name = name
+		ProcessPipe(pipe, c)
+		// Always continue after a pipe
+		return true
+	}
 	if plugin == nil {
-		log.Error().Err(errors.New("No plugin name found")).Msg("")
+		log.Error().Err(errors.New("No predicate found")).Msg("")
 		return false
 	}
 	log := log.With().Str("predicate", pluginName).Logger()
@@ -105,4 +124,18 @@ func assignPlugin(plugin *plugins.Plugin, pluginName *string, k string) {
 		*plugin = res
 		*pluginName = k
 	}
+}
+
+func assignPipe(pipe *conf.Pipe, n yaml.Node) {
+	if pipe.Pipe != nil {
+		log.Warn().Msg("Several 'pipe' declared, " +
+			"using the first found")
+		return
+	}
+	p := []conf.Predicate{}
+	if err := n.Decode(&p); err != nil {
+		log.Error().Err(err).Msg("invalid 'pipe'")
+		return
+	}
+	pipe.Pipe = p
 }
