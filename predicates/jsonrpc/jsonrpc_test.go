@@ -237,8 +237,8 @@ func httpServerMock(t *testing.T) *httptest.Server {
   Helpers
   ***************************************************************************/
 func getConf(t *testing.T, source string) conf.Params {
-	c := conf.Params{}
-	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
+	c := conf.Params{Name: "test"}
+	if err := yaml.Unmarshal([]byte(source), &c.Conf); err != nil {
 		t.Errorf("Should not have returned parsing error")
 	}
 	return c

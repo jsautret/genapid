@@ -23,10 +23,11 @@ func Process(p conf.Pipe, r *http.Request) bool {
 		Params: r.URL.Query(),
 	}
 	ctx := &ctx.Ctx{
-		Req: r,
-		Url: url,
-		R:   make(ctx.Registered),
-		V:   make(ctx.Variables),
+		Req:     r,
+		Url:     url,
+		R:       make(ctx.Registered),
+		V:       make(ctx.Variables),
+		Default: make(ctx.Default),
 	}
 
 	var result bool

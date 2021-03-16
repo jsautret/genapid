@@ -25,7 +25,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
 	var p params
-	if !conf.GetParams(ctx, config, &p) {
+	if !conf.GetPredicateParams(ctx, config, &p) {
 		log.Error().Err(errors.New("Invalid params")).Msg("")
 		return false
 	}
@@ -63,7 +63,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	return true
 }
 
-// Try to convert params to something that be marshalled in json
+// Try to convert params to something that can be marshalled in json
 func getParams(p interface{}) interface{} {
 	if params, ok := p.(map[interface{}]interface{}); ok {
 		mapString := make(map[string]interface{})

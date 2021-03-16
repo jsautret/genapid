@@ -17,7 +17,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "log").Logger()
 
 	var p params
-	if !conf.GetParams(ctx, config, &p) {
+	if !conf.GetPredicateParams(ctx, config, &p) {
 		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
 		return false
 	}

@@ -17,6 +17,8 @@ type Ctx struct {
 	// Imcoming URL info
 	Url *Url
 
+	Default Default
+
 	// Registered Contexts
 	R Registered
 
@@ -33,6 +35,7 @@ type Url struct {
 type Registered map[string]map[string]interface{}
 type Variables map[string]interface{}
 type Results map[string]interface{}
+type Default map[string]map[string]interface{}
 
 func (c *Ctx) ToInterface() interface{} {
 	type ctx struct {

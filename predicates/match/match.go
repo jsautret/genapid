@@ -20,11 +20,16 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
 	var p params
-	if !conf.GetParams(ctx, config, &p) {
+	if !conf.GetPredicateParams(ctx, config, &p) {
 		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
 		return false
 	}
 
+	if p.String == "" {
+		log.Error().Err(errors.New("'string' is missing or empty")).
+			Msg("")
+		return false
+	}
 	log.Debug().Str("string", p.String).Msg("")
 	if p.Fixed != "" {
 		log.Debug().Str("fixed", p.Fixed).Msg("")
@@ -46,7 +51,6 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 			}
 		}
 	}
-	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp' " +
-		"for predicate 'match'"))
+	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
 	return false
 }

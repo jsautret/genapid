@@ -141,7 +141,7 @@ l1:
   - ="l12"
 `,
 			expected: params{
-				I: Params{
+				I: map[string]interface{}{
 					"item1": "123",
 					"item2": toInterfaceList([]string{"item21", "item22"}),
 					"item3": float64(789),
@@ -168,7 +168,7 @@ l1:
 				"fuzzy": []string{"cartwheel", "foobar", "wheel", "baz"},
 			}
 			p := params{}
-			if !GetParams(&context, conf, &p) {
+			if !GetPredicateParams(&context, conf, &p) {
 				t.Errorf("Cannot convert params %v", conf)
 			} else {
 				//fmt.Printf("I %v\n", reflect.ValueOf(p.I).Kind())
@@ -196,8 +196,8 @@ func TestMain(m *testing.M) {
   Helpers
   ***************************************************************************/
 func getConf(t *testing.T, source string) Params {
-	c := Params{}
-	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
+	c := Params{Name: "test"}
+	if err := yaml.Unmarshal([]byte(source), &(c.Conf)); err != nil {
 		t.Fatalf("YAML parsing error: %v", err)
 	}
 	return c

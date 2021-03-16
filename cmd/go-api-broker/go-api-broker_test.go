@@ -75,6 +75,35 @@ func TestHttpServer(t *testing.T) {
       regexp: value[1-9]
 `,
 		},
+		{
+			name:       "DefaultFields",
+			method:     http.MethodGet,
+			path:       "/PipeOfMatch",
+			statusCode: http.StatusOK,
+			conf: `
+- name: "Test 'default'"
+  pipe:
+  - default:
+      match:
+        string: DDDDDD
+  - match:
+      fixed:  "DDDDDD"
+  - match:
+      string:  CCCCC
+      fixed:  CCCCC
+  - match:
+      regexp: D+
+  - default:
+      match:
+        string: EEEEEE
+  - match:
+      fixed: EEEEEE
+  - default:
+      match:
+        fixed: EEEEEE
+  - match:
+`,
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

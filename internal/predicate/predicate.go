@@ -34,9 +34,9 @@ func Process(p conf.Predicate, ctx *ctx.Ctx, r *http.Request) bool {
 	log := log.With().Str("predicate", pluginName).Logger()
 	log.Debug().Msgf("Found predicate '%v'", pluginName)
 
-	var args conf.Params
 	argsNode := p[pluginName]
-	if err := argsNode.Decode(&args); err != nil {
+	args := conf.Params{Name: pluginName}
+	if err := argsNode.Decode(&(args.Conf)); err != nil {
 		log.Error().Err(err).Msg("Parameters must be a dict")
 		return false
 	} else {
@@ -65,15 +65,15 @@ func assignRegister(register *string, n yaml.Node) {
 }
 
 func processSet(ctx *ctx.Ctx, n yaml.Node) {
-	var args []conf.Params
-	if err := n.Decode(&args); err != nil {
+	var args []map[string]interface{}
+	if err := n.Decode(&(args)); err != nil {
 		log.Error().Err(err).Msg("'set' parameters must be a dict")
 		return
 	}
 	for i := 0; i < len(args); i++ {
 		for k := range args[i] {
 			var field map[string]interface{}
-			arg := make(conf.Params)
+			arg := make(map[string]interface{})
 			arg[k] = args[i][k]
 			if !conf.GetParams(ctx, arg, &field) {
 				log.Error().
