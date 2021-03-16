@@ -70,8 +70,8 @@ func TestJsonpath(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			r := jsonpath(c.path, getJson(t, c.json))
-			e := getJson(t, c.expected)
+			r := jsonpath(c.path, getJSON(t, c.json))
+			e := getJSON(t, c.expected)
 			if diff := deep.Equal(r, e); diff != nil {
 				t.Error(diff)
 			}
@@ -89,7 +89,7 @@ func TestMain(m *testing.M) {
 /***************************************************************************
   Helpers
   ***************************************************************************/
-func getJson(t *testing.T, in string) interface{} {
+func getJSON(t *testing.T, in string) interface{} {
 	var res interface{}
 	err := json.Unmarshal([]byte(in), &res)
 	if err != nil {

@@ -11,15 +11,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Global conf
 var (
-	// Global conf
 	LogLevel zerolog.Level
 	config   conf.Root
 )
 
 // Command line flags variables
 var (
-	configFileName, SLogLevel string
+	configFileName string
+	SLogLevel      string
 )
 
 // Command line flags definitions

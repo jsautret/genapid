@@ -14,7 +14,7 @@ type params struct {
 	Msg interface{}
 }
 
-// Evaluate predicate
+// Call evaluate a predicate
 func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "log").Logger()
 

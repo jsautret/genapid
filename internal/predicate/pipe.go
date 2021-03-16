@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Process a pipe of predicates
+// ProcessPipe evaluate a pipe of predicates
 func ProcessPipe(p conf.Pipe, c *ctx.Ctx) bool {
 	name := p.Name
 	log := log.With().Str("pipe", name).Logger()

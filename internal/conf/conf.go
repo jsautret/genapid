@@ -1,4 +1,4 @@
-// Access and convert data from configuration file
+// Package conf provides access and convert data from configuration file
 package conf
 
 import (
@@ -12,20 +12,20 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-// Map the main conf file
+// Root maps the main conf file
 type Root []Pipe
 
-// Map a pipe in conf file
+// Pipe maps a pipe in conf file
 type Pipe struct {
 	Name    string
 	Pipe    []Predicate
 	Default ctx.Default
 }
 
-// Map a predicate in conf file
+// Predicate maps a predicate in conf file
 type Predicate map[string]yaml.Node
 
-// Name of predicate and its parameters as set in conf file
+// Params contains name of predicate and its parameters as set in conf file
 type Params struct {
 	Name string
 	Conf map[string]interface{}
@@ -45,7 +45,7 @@ func Read(filename string) Root {
 	return conf
 }
 
-// Add predicate default parameters to context
+// AddDefault adds predicate default parameters to context
 func AddDefault(c *ctx.Ctx, defaultConf Params) {
 	log.Debug().Interface("default", defaultConf).Msg("Setting default fields")
 	// for each predicate
@@ -71,7 +71,7 @@ func AddDefault(c *ctx.Ctx, defaultConf Params) {
 	}
 }
 
-// Get predicate parameters from default and from the conf, with Gval
+// GetPredicateParams from default and from the conf, with Gval
 // expressions evaluated
 func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 	// set predicate default parameters
@@ -82,7 +82,7 @@ func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 	return GetParams(ctx, config.Conf, params)
 }
 
-// Get params from a map & evaluate Gval expressions in it
+// GetParams from a map & evaluate Gval expressions in it
 func GetParams(ctx *ctx.Ctx, config interface{}, params interface{}) bool {
 	log.Trace().Interface("in", config).Msg("Params conversion")
 	c := mapstructure.DecoderConfig{

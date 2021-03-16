@@ -18,6 +18,8 @@ import (
 
 var t *template.Template
 
+// GetTemplatedString processes templates in a string and returns the
+// result
 func GetTemplatedString(ctx *ctx.Ctx, name, in string) (string, error) {
 	log := log.With().Str("template", name).Logger()
 	log.Trace().Str("in", in).Msg("")

@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Evaluate a predicate or a pipe from from conf file and current
-// context
+// Process evaluate a predicate or a pipe from from conf file and
+// current context
 func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	var register, pluginName, name, stop string
 	var plugin plugins.Plugin
@@ -77,19 +77,18 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	if err := argsNode.Decode(&(args.Conf)); err != nil {
 		log.Error().Err(err).Msg("Parameters must be a dict")
 		return false
-	} else {
-		c.Results = make(map[string]interface{})
-
-		result := plugin(c, args)
-		log.Debug().Bool("value", result).Msg("End predicate")
-		if register != "" {
-			log.Debug().Str("register", register).
-				Msgf("Register result to %v", register)
-			c.R[register] = c.Results
-			c.R[register]["result"] = result
-		}
-		return result
 	}
+	c.Results = make(map[string]interface{})
+
+	result := plugin(c, args)
+	log.Debug().Bool("value", result).Msg("End predicate")
+	if register != "" {
+		log.Debug().Str("register", register).
+			Msgf("Register result to %v", register)
+		c.R[register] = c.Results
+		c.R[register]["result"] = result
+	}
+	return result
 }
 
 // Decode & store an option

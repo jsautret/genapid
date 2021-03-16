@@ -98,7 +98,7 @@ func convertRecursive(copy, original reflect.Value, c *ctx.Ctx) {
 
 	// If it is a struct we translate each field
 	case reflect.Struct:
-		for i := 0; i < original.NumField(); i += 1 {
+		for i := 0; i < original.NumField(); i++ {
 			if original.Field(i).CanSet() {
 				convertRecursive(copy.Field(i), original.Field(i), c)
 			}
@@ -107,7 +107,7 @@ func convertRecursive(copy, original reflect.Value, c *ctx.Ctx) {
 	// If it is a slice we create a new slice and translate each element
 	case reflect.Slice:
 		copy.Set(reflect.MakeSlice(original.Type(), original.Len(), original.Cap()))
-		for i := 0; i < original.Len(); i += 1 {
+		for i := 0; i < original.Len(); i++ {
 			convertRecursive(copy.Index(i), original.Index(i), c)
 		}
 
@@ -145,14 +145,14 @@ func convertElem(v reflect.Value, c *ctx.Ctx) reflect.Value {
 	//fmt.Printf("gval1 %v\n", v)
 	if v.Kind() == reflect.String {
 		//fmt.Printf("gval2 %v\n", v)
-		if r, err := evaluateGval(v.String(), c); err != nil {
+		r, err := evaluateGval(v.String(), c)
+		if err != nil {
 			log.Warn().Err(err).Msg("Cannot evaluate Gval expression")
 			return v
-		} else {
-			//fmt.Printf("gval3 %v\n", r)
-			//fmt.Printf("gval4 %v\n", r.Kind())
-			return reflect.ValueOf(r)
 		}
+		//fmt.Printf("gval3 %v\n", r)
+		//fmt.Printf("gval4 %v\n", r.Kind())
+		return reflect.ValueOf(r)
 	}
 	return v
 }
@@ -200,7 +200,7 @@ func jsonpathFunction() gval.Language {
 		if !ok {
 			return nil, fmt.Errorf("jsonpath() expects string as first argument")
 		}
-		if r, err := toJson(arguments[1]); err != nil {
+		if r, err := toJSON(arguments[1]); err != nil {
 			log.Warn().Err(err).Msg("Cannot convert to json")
 		} else {
 			return jsonpath.Get(path, r)
@@ -210,8 +210,8 @@ func jsonpathFunction() gval.Language {
 	})
 }
 
-// Try to convert data to something that jsonpath can understand
-func toJson(in interface{}) (map[string]interface{}, error) {
+// ToJSON tries to convert data to something that jsonpath can understand
+func toJSON(in interface{}) (map[string]interface{}, error) {
 	log := log.With().Str("jsonpath", "toJson").Logger()
 	log.Trace().Interface("in", in).Msg("")
 	switch reflect.TypeOf(in).Kind() {
@@ -234,7 +234,7 @@ func toJson(in interface{}) (map[string]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			return toJson(v)
+			return toJSON(v)
 		}
 	case reflect.String:
 		log.Trace().Str("type", "string").Msg("")
@@ -245,7 +245,7 @@ func toJson(in interface{}) (map[string]interface{}, error) {
 			return nil, err
 		}
 		log.Trace().Interface("in", in).Msg("")
-		return toJson(v)
+		return toJSON(v)
 	}
 
 	err := fmt.Errorf("cannot convert to json: %v", in)

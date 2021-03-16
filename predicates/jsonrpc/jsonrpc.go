@@ -13,7 +13,7 @@ import (
 
 // Predicate parameters
 type params struct {
-	Url       string
+	URL       string
 	Procedure string
 	Params    interface{} `mapstructure:",omitempty"`
 	BasicAuth *basicAuth  `mapstructure:"basic_auth,omitempty"`
@@ -22,7 +22,7 @@ type basicAuth struct {
 	Username, Password string
 }
 
-// Evaluate predicate
+// Call evaluate the predicate
 func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
@@ -31,7 +31,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 		log.Error().Err(errors.New("Invalid params")).Msg("")
 		return false
 	}
-	if p.Url == "" || p.Procedure == "" {
+	if p.URL == "" || p.Procedure == "" {
 		log.Error().Err(errors.New("Missing parameters")).Msg("")
 		return false
 	}
@@ -48,7 +48,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 			CustomHeaders: auth,
 		}
 	}
-	rpcClient := jsonrpc.NewClientWithOpts(p.Url, &opts)
+	rpcClient := jsonrpc.NewClientWithOpts(p.URL, &opts)
 	var result interface{}
 	var err error
 	if p.Params != nil {

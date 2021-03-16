@@ -142,6 +142,7 @@ func TestMain(m *testing.M) {
 /***************************************************************************
   JSONRCP server mock
   ***************************************************************************/
+//gocyclo:ignore
 func httpServerMock(t *testing.T) *httptest.Server {
 	// Start a local HTTP server
 	h := func(rw http.ResponseWriter, r *http.Request) {
@@ -157,7 +158,7 @@ func httpServerMock(t *testing.T) *httptest.Server {
 		case "/test_OneStringParam":
 			type jsonResponse struct {
 				Method, Jsonrpc string
-				Id              int
+				ID              int
 				Params          map[string]string
 			}
 			response := jsonResponse{}
@@ -177,7 +178,7 @@ func httpServerMock(t *testing.T) *httptest.Server {
 			body := streamToByte(r.Body)
 			type jsonResponse2 struct {
 				Method, Jsonrpc string
-				Id              int
+				ID              int
 				Params          []int
 			}
 			response := jsonResponse2{}
@@ -200,7 +201,7 @@ func httpServerMock(t *testing.T) *httptest.Server {
 			t.Logf("%s", body)
 			type jsonResponse struct {
 				Method, Jsonrpc string
-				Id              int
+				ID              int
 				Params          []interface{}
 			}
 			response := jsonResponse{}

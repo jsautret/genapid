@@ -1,4 +1,4 @@
-// ctx defines the context available for predicates, that is, the data
+// Package ctx defines the context available for predicates, that is, the data
 // about the incoming request or the result of the previous evaluated
 // predicates
 package ctx
@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-// Main entry point to the context
+// Ctx is the main entry point to the context
 type Ctx struct {
 	// Incoming request
 	In Request
@@ -30,18 +30,18 @@ type Ctx struct {
 	Result bool
 }
 
-// Info about incoming URL
-type Url struct {
+// URL contains info about incoming URL
+type URL struct {
 	Params url.Values //map[string]string
 }
 
-// Info about incoming request
+// Request containas info about incoming request
 type Request struct {
 	// Incoming HTTP request
 	Req *http.Request
 
 	// Imcoming URL info
-	Url *Url
+	URL *URL
 
 	// Mime type of body
 	Mime string
@@ -50,19 +50,19 @@ type Request struct {
 	Body string
 }
 
-// Results resgistered by a predicate
+// Registered stores results resgistered by a predicate
 type Registered map[string]map[string]interface{}
 
 // Variables set by the 'set' option
 type Variables map[string]interface{}
 
-// Resulsts of a predicate
+// Results of a predicate
 type Results map[string]interface{}
 
 // Default predicates values, set by 'default' predicate
 type Default map[string]map[string]interface{}
 
-// Convert context to generic type for Gval evaluation
+// ToInterface converts context to generic type for Gval evaluation
 func (c *Ctx) ToInterface() interface{} {
 	type ctx struct {
 		In      Request

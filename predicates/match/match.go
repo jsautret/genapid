@@ -17,7 +17,7 @@ type params struct {
 	Regexp string
 }
 
-// Evaluate predicate
+// Call evaluate predicate
 func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
@@ -40,18 +40,18 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	if p.Regexp != "" {
 		log.Debug().Str("regexp", p.Regexp).Msg("")
 
-		if r, err := regexp.Compile(p.Regexp); err != nil {
+		r, err := regexp.Compile(p.Regexp)
+		if err != nil {
 			log.Error().Err(err).Msg("invalid 'regexp'")
 			return false
-		} else {
-			if res := r.FindStringSubmatch(p.String); len(res) == 0 {
-				return false
-			} else {
-				log.Debug().Msgf("'regexp' matched %v", res)
-				ctx.Results["matches"] = res
-				return true
-			}
 		}
+		res := r.FindStringSubmatch(p.String)
+		if len(res) == 0 {
+			return false
+		}
+		log.Debug().Msgf("'regexp' matched %v", res)
+		ctx.Results["matches"] = res
+		return true
 	}
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
 	return false
