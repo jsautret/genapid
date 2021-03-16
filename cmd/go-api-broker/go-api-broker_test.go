@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,6 +23,8 @@ func TestHttpServer(t *testing.T) {
 		name       string
 		method     string
 		path       string
+		mime       string
+		body       string
 		want       string
 		statusCode int
 		conf       string
@@ -61,18 +64,26 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodPost,
 			path:       "/test?param1=value1&param2=value2",
 			statusCode: http.StatusOK,
+			mime:       "application/json; charset=utf-8",
+			body:       `{"bodyName": "bodyValue"}`,
 			conf: `
 - name: "Test pipe of match on incoming request"
   pipe:
   - match:
-      string: =Req.Method
+      string: =In.Req.Method
       fixed: POST
   - match:
-      string: =Url.Params.param2[0]
+      string: =In.Url.Params.param2[0]
       fixed: value2
   - match:
-      string: =Url.Params.param1[0]
+      string: =In.Url.Params.param1[0]
       regexp: value[1-9]
+  - match:
+      string: =In.Mime
+      fixed: application/json
+  - match:
+      string: =jsonpath("$.bodyName", In.Body)
+      fixed: bodyValue
 `,
 		},
 		{
@@ -108,7 +119,11 @@ func TestHttpServer(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			config = getConf(t, tc.conf)
-			request := httptest.NewRequest(tc.method, tc.path, nil)
+			request := httptest.NewRequest(tc.method, tc.path,
+				bytes.NewBuffer([]byte(tc.body)))
+			if tc.mime != "" {
+				request.Header.Add("Content-Type", tc.mime)
+			}
 			responseRecorder := httptest.NewRecorder()
 
 			handler(responseRecorder, request)

@@ -81,7 +81,7 @@ s1: '=V.variable1'
 		{
 			name: "Request",
 			conf: `
-s1: '=Req.Method'
+s1: '=In.Req.Method'
 `,
 			expected: params{
 				S1: "POST",
@@ -107,6 +107,15 @@ s2: '=jsonpath("$.f2", V.variable3)'
 			expected: params{
 				S1: "value",
 				S2: "value32",
+			},
+		},
+		{
+			name: "JsonParsing",
+			conf: `
+s1: '=jsonpath("$.name", V.variable4)'
+`,
+			expected: params{
+				S1: "value4",
 			},
 		},
 		{
@@ -154,8 +163,8 @@ l1:
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
 			context := ctx.Ctx{
-				Req: &http.Request{Method: "POST"},
-				R:   make(ctx.Registered),
+				In: ctx.Request{Req: &http.Request{Method: "POST"}},
+				R:  make(ctx.Registered),
 			}
 			context.V = ctx.Variables{
 				"variable1": "value1",
@@ -165,6 +174,8 @@ l1:
 					"f2": "value32",
 					"f3": "value33",
 				},
+				"variable4": `{"name": "value4"}`,
+
 				"fuzzy": []string{"cartwheel", "foobar", "wheel", "baz"},
 			}
 			p := params{}

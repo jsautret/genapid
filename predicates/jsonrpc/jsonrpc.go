@@ -11,6 +11,7 @@ import (
 	"github.com/ybbus/jsonrpc/v2"
 )
 
+// Predicate parameters
 type params struct {
 	Url       string
 	Procedure string
@@ -21,6 +22,7 @@ type basicAuth struct {
 	Username, Password string
 }
 
+// Evaluate predicate
 func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 

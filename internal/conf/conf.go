@@ -1,3 +1,4 @@
+// Access and convert data from configuration file
 package conf
 
 import (
@@ -11,13 +12,20 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// Map the main conf file
 type Root []Pipe
+
+// Map a pipe in conf file
 type Pipe struct {
 	Name    string
 	Pipe    []Predicate
 	Default ctx.Default
 }
+
+// Map a predicate in conf file
 type Predicate map[string]yaml.Node
+
+// Name of predicate and its parameters as set in conf file
 type Params struct {
 	Name string
 	Conf map[string]interface{}
@@ -63,7 +71,8 @@ func AddDefault(c *ctx.Ctx, defaultConf Params) {
 	}
 }
 
-// Get predicate parameters from default and from the conf
+// Get predicate parameters from default and from the conf, with Gval
+// expressions evaluated
 func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 	// set predicate default parameters
 	if !GetParams(ctx, ctx.Default[config.Name], params) {
@@ -73,7 +82,9 @@ func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 	return GetParams(ctx, config.Conf, params)
 }
 
+// Get params from a map & evaluate Gval expressions in it
 func GetParams(ctx *ctx.Ctx, config map[string]interface{}, params interface{}) bool {
+	log.Trace().Interface("in", config).Msg("Params conversion")
 	c := mapstructure.DecoderConfig{
 		DecodeHook: hookGval(ctx),
 		ZeroFields: false, // needed for 'default' field
@@ -86,20 +97,20 @@ func GetParams(ctx *ctx.Ctx, config map[string]interface{}, params interface{}) 
 		log.Error().Err(err).Msg("Incorrect fields")
 		return false
 	}
+	log.Trace().Interface("out", params).Msg("Params conversion")
 	return true
 }
 
+// Evaluate Gval expressions while mapping data to params
 func hookGval(c *ctx.Ctx) func(from, to reflect.Type, data interface{}) (interface{}, error) {
 	return func(from, to reflect.Type, data interface{}) (interface{}, error) {
 		log.Trace().Interface("hook data", data).Msg("")
-		log.Trace().Msgf("hook from: %v", from.Kind())
-		log.Trace().Msgf("hook to: %v", to.Kind())
 		if from.Kind() == reflect.String {
-			return convertGval(data.(string), c)
+			return evaluateGval(data.(string), c)
 		}
 		if to.Kind() == reflect.Interface &&
 			(from.Kind() == reflect.Map || from.Kind() == reflect.Slice) {
-			// data will not be traversed by mapstructure,
+			// This data will not be traversed by mapstructure,
 			// so we do it here
 			r := convert(data, c)
 			log.Trace().Msgf("hook translated: %v", r)

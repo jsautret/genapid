@@ -1,8 +1,6 @@
 package pipe
 
 import (
-	"net/http"
-
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/jsautret/go-api-broker/internal/predicate"
@@ -11,7 +9,8 @@ import (
 
 var defaultPipeName = "noname"
 
-func Process(p conf.Pipe, r *http.Request) bool {
+// Process a pipe of predicates
+func Process(p conf.Pipe, c *ctx.Ctx) bool {
 	name := p.Name
 	if name == "" {
 		name = defaultPipeName
@@ -19,20 +18,10 @@ func Process(p conf.Pipe, r *http.Request) bool {
 	log := log.With().Str("pipe", name).Logger()
 
 	log.Debug().Msgf("Processing pipe '%v'", name)
-	url := &ctx.Url{
-		Params: r.URL.Query(),
-	}
-	ctx := &ctx.Ctx{
-		Req:     r,
-		Url:     url,
-		R:       make(ctx.Registered),
-		V:       make(ctx.Variables),
-		Default: make(ctx.Default),
-	}
 
 	var result bool
 	for j := 0; j < len(p.Pipe); j++ {
-		result = predicate.Process(p.Pipe[j], ctx, r)
+		result = predicate.Process(p.Pipe[j], c)
 		if !result {
 			break
 		}

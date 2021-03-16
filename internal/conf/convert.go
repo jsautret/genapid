@@ -1,9 +1,6 @@
-// Traverses an arbitrary struct and translates all stings it encounters
-//
-// I haven't seen an example for reflection traversing an arbitrary struct, so
-// I want to share this with you. If you encounter any bugs or want to see
-// another example please comment.
-//
+// Functions to convert data
+
+// Contains some code with following license:
 // The MIT License (MIT)
 //
 // Copyright (c) 2014 Heye Vöcking
@@ -30,9 +27,12 @@ package conf
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
@@ -41,6 +41,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Traverse data structure & evaluate Gval expression in strings
 func convert(obj interface{}, c *ctx.Ctx) interface{} {
 	// Wrap the original in a reflect.Value
 	original := reflect.ValueOf(obj)
@@ -139,11 +140,12 @@ func convertRecursive(copy, original reflect.Value, c *ctx.Ctx) {
 
 }
 
+// Convert Elem if it's a string, remplacing Gval expression by its value
 func convertElem(v reflect.Value, c *ctx.Ctx) reflect.Value {
 	//fmt.Printf("gval1 %v\n", v)
 	if v.Kind() == reflect.String {
 		//fmt.Printf("gval2 %v\n", v)
-		if r, err := convertGval(v.String(), c); err != nil {
+		if r, err := evaluateGval(v.String(), c); err != nil {
 			log.Warn().Err(err).Msg("Cannot evaluate Gval expression")
 			return v
 		} else {
@@ -155,7 +157,8 @@ func convertElem(v reflect.Value, c *ctx.Ctx) reflect.Value {
 	return v
 }
 
-func convertGval(s string, c *ctx.Ctx) (interface{}, error) {
+// Evaluate string if it's a Gval expression and return its value
+func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 	if s != "" && s[0] == '=' {
 		return gval.Evaluate(s[1:], c.ToInterface(),
 			jsonpath.Language(), jsonpathFunction(),
@@ -164,6 +167,8 @@ func convertGval(s string, c *ctx.Ctx) (interface{}, error) {
 	return s, nil
 }
 
+// Add a pipe operator to Gval expressions to pass a new Gval context to
+// another Gval expression
 func pipeOperator() gval.Language {
 	return gval.PostfixOperator("|",
 		func(c context.Context, p *gval.Parser,
@@ -183,6 +188,9 @@ func pipeOperator() gval.Language {
 		})
 }
 
+// Add a jsonpath(path, json) function to Gval that returns the
+// evaluated json path on the json data. Data will be converted to
+// json if possible.
 func jsonpathFunction() gval.Language {
 	return gval.Function("jsonpath", func(arguments ...interface{}) (interface{}, error) {
 		if len(arguments) != 2 {
@@ -192,7 +200,9 @@ func jsonpathFunction() gval.Language {
 		if !ok {
 			return nil, fmt.Errorf("jsonpath() expects string as first argument")
 		}
-		if r, err := toMapStrings(arguments[1]); err == nil {
+		if r, err := toJson(arguments[1]); err != nil {
+			log.Warn().Err(err).Msg("Cannot convert to json")
+		} else {
 			return jsonpath.Get(path, r)
 		}
 		return jsonpath.Get(path, arguments[1])
@@ -200,29 +210,13 @@ func jsonpathFunction() gval.Language {
 	})
 }
 
-func fuzzyFunction() gval.Language {
-	return gval.Function("fuzzy", func(arguments ...interface{}) (interface{}, error) {
-		if len(arguments) != 2 {
-			return nil, fmt.Errorf("fuzzy() expects exactly two arguments")
-		}
-		source, ok := arguments[0].(string)
-		if !ok {
-			return nil, fmt.Errorf("fuzzy() expects string as first argument")
-		}
-		targets, err := toListStrings(arguments[1])
-		if err != nil {
-			return nil, fmt.Errorf("fuzzy() expects []string as second argument, %v", err)
-		}
-		matches := fuzzysearch.RankFindNormalizedFold(
-			source, targets)
-		sort.Sort(matches)
-		return matches[0].Target, nil
-	})
-}
-
-func toMapStrings(in interface{}) (map[string]interface{}, error) {
+// Try to convert data to something that jsonpath can understand
+func toJson(in interface{}) (map[string]interface{}, error) {
+	log := log.With().Str("jsonpath", "toJson").Logger()
+	log.Trace().Interface("in", in).Msg("")
 	switch reflect.TypeOf(in).Kind() {
 	case reflect.Map:
+		log.Trace().Str("type", "map").Msg("")
 		out := make(map[string]interface{})
 		iter := reflect.ValueOf(in).MapRange()
 		for iter.Next() {
@@ -231,11 +225,60 @@ func toMapStrings(in interface{}) (map[string]interface{}, error) {
 			out[k.String()] = v.Interface()
 		}
 		return out, nil
+	case reflect.Struct:
+		log.Trace().Str("type", "struct").Msg("")
+		if r, ok := in.(io.Reader); ok {
+			var v interface{}
+
+			err := json.NewDecoder(r).Decode(&v)
+			if err != nil {
+				return nil, err
+			}
+			return toJson(v)
+		}
+	case reflect.String:
+		log.Trace().Str("type", "string").Msg("")
+		var v interface{}
+		s, _ := in.(string)
+		err := json.NewDecoder(strings.NewReader(s)).Decode(&v)
+		if err != nil {
+			return nil, err
+		}
+		log.Trace().Interface("in", in).Msg("")
+		return toJson(v)
 	}
-	err := fmt.Errorf("not a map: %v", in)
+
+	err := fmt.Errorf("cannot convert to json: %v", in)
 	return nil, err
 }
 
+// Add a fuzzy(string, stringList) function to Gval that returns the
+// best fuzzy match from the list
+func fuzzyFunction() gval.Language {
+	return gval.Function("fuzzy", func(arguments ...interface{})
+		(interface{}, error) {
+		if len(arguments) != 2 {
+			return nil,
+				fmt.Errorf("fuzzy() expects exactly two arguments")
+		}
+		source, ok := arguments[0].(string)
+		if !ok {
+			return nil,
+				fmt.Errorf("fuzzy() expects string as first argument")
+		}
+		targets, err := toListStrings(arguments[1])
+		if err != nil {
+			return nil,
+				fmt.Errorf("fuzzy() expects []string as second argument, %v", err)
+		}
+		matches := fuzzysearch.RankFindNormalizedFold(
+			source, targets)
+		sort.Sort(matches)
+		return matches[0].Target, nil
+	})
+}
+
+// Tries to convert data to a list of strings
 func toListStrings(arg interface{}) ([]string, error) {
 	if r, ok := arg.([]string); ok {
 		return r, nil

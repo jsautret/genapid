@@ -3,7 +3,6 @@ package predicate
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/jsautret/go-api-broker/ctx"
 	"gopkg.in/yaml.v3"
@@ -13,7 +12,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Process(p conf.Predicate, ctx *ctx.Ctx, r *http.Request) bool {
+// Evaluate a predicate from its parameters (from conf file) and
+// current context
+func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	var register, pluginName string
 	var plugin plugins.Plugin
 	for k := range p {
@@ -22,7 +23,7 @@ func Process(p conf.Predicate, ctx *ctx.Ctx, r *http.Request) bool {
 		case "register":
 			assignRegister(&register, p[k])
 		case "set":
-			processSet(ctx, p[k])
+			processSet(c, p[k])
 		default:
 			assignPlugin(&plugin, &pluginName, k)
 		}
@@ -40,19 +41,21 @@ func Process(p conf.Predicate, ctx *ctx.Ctx, r *http.Request) bool {
 		log.Error().Err(err).Msg("Parameters must be a dict")
 		return false
 	} else {
-		ctx.Results = make(map[string]interface{})
-		result := plugin(ctx, args)
+		c.Results = make(map[string]interface{})
+
+		result := plugin(c, args)
 		log.Debug().Bool("value", result).Msg("End predicate")
 		if register != "" {
 			log.Debug().Str("register", register).
 				Msgf("Register result to %v", register)
-			ctx.R[register] = ctx.Results
-			ctx.R[register]["result"] = result
+			c.R[register] = c.Results
+			c.R[register]["result"] = result
 		}
 		return result
 	}
 }
 
+// Store registered results with 'register' option
 func assignRegister(register *string, n yaml.Node) {
 	if *register != "" {
 		log.Warn().Msg("Several 'register' declared, " +
@@ -64,7 +67,8 @@ func assignRegister(register *string, n yaml.Node) {
 	}
 }
 
-func processSet(ctx *ctx.Ctx, n yaml.Node) {
+// Store variable values set by 'set' option
+func processSet(c *ctx.Ctx, n yaml.Node) {
 	var args []map[string]interface{}
 	if err := n.Decode(&(args)); err != nil {
 		log.Error().Err(err).Msg("'set' parameters must be a dict")
@@ -75,18 +79,20 @@ func processSet(ctx *ctx.Ctx, n yaml.Node) {
 			var field map[string]interface{}
 			arg := make(map[string]interface{})
 			arg[k] = args[i][k]
-			if !conf.GetParams(ctx, arg, &field) {
+			if !conf.GetParams(c, arg, &field) {
 				log.Error().
 					Err(fmt.Errorf("Invalid value for %v", k)).
 					Msg("")
 				continue
 			}
 			log.Trace().Msgf("set %v='%v'", k, field[k])
-			ctx.V[k] = field[k]
+			c.V[k] = field[k]
 		}
 	}
 }
 
+// Find a plugin corresponding to the predicate set in the conf file
+// and set plugin & pluginName parameters accordingly
 func assignPlugin(plugin *plugins.Plugin, pluginName *string, k string) {
 	if *plugin != nil {
 		err := fmt.Errorf("Found both '%v' & '%v', "+

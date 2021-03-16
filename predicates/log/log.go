@@ -9,10 +9,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Predicate parameters
 type params struct {
 	Msg interface{}
 }
 
+// Evaluate predicate
 func Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "log").Logger()
 

@@ -6,38 +6,38 @@ import (
 	"os"
 
 	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/pipe"
 	"github.com/jsautret/go-api-broker/internal/plugins"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	// flags
-	configFileName, SLogLevel string
-
 	// Global conf
 	LogLevel zerolog.Level
 	config   conf.Root
 )
 
+// Command line flags variables
+var (
+	configFileName, SLogLevel string
+)
+
+// Command line flags definitions
+func init() {
+	flag.StringVar(&configFileName, "config", "route.yml", "Config file")
+	flag.StringVar(&SLogLevel, "loglevel", "info", "Log level")
+}
+
+// Main handler for incoming requests
+func handler(w http.ResponseWriter, r *http.Request) {
+	if !process(w, r) {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
 func quit(w http.ResponseWriter, r *http.Request) {
 	log.Info().Str("app", "stopped").Msg("Application stopped")
 	os.Exit(0)
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	log.Debug().Str("http", "start").Str("path", r.URL.Path).
-		Msg("Processing HTTP request")
-	var res bool
-	for i := 0; i < len(config); i++ {
-		res = pipe.Process(config[i], r)
-	}
-	log.Debug().Str("http", "end").Str("path", r.URL.Path).
-		Msg("HTTP request processed")
-	if !res {
-		w.WriteHeader(http.StatusNotFound)
-	}
 }
 
 func main() {
@@ -51,6 +51,9 @@ func main() {
 		log.Warn().Err(err).Msg("Forcing info log level")
 	} else {
 		zerolog.SetGlobalLevel(logLevel)
+		if logLevel == zerolog.TraceLevel {
+			log.Logger = log.With().Caller().Timestamp().Logger()
+		}
 		log.Info().Str("loglevel", logLevel.String()).Msg("Setting loglevel")
 	}
 
@@ -66,9 +69,4 @@ func main() {
 		Msgf("Application started and listening to :%v", 9191)
 
 	log.Fatal().Err(http.ListenAndServe(":9191", nil)).Msg("")
-}
-
-func init() {
-	flag.StringVar(&configFileName, "config", "route.yml", "Config file")
-	flag.StringVar(&SLogLevel, "loglevel", "info", "Log level")
 }
