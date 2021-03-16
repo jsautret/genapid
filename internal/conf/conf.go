@@ -83,7 +83,7 @@ func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
 }
 
 // Get params from a map & evaluate Gval expressions in it
-func GetParams(ctx *ctx.Ctx, config map[string]interface{}, params interface{}) bool {
+func GetParams(ctx *ctx.Ctx, config interface{}, params interface{}) bool {
 	log.Trace().Interface("in", config).Msg("Params conversion")
 	c := mapstructure.DecoderConfig{
 		DecodeHook: hookGval(ctx),

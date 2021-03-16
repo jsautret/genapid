@@ -16,7 +16,7 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.TraceLevel
+//var logLevel = zerolog.DebugLevel
 
 func TestHttpServer(t *testing.T) {
 	tt := []struct {
@@ -137,6 +137,27 @@ func TestHttpServer(t *testing.T) {
   # even if predicate fails in sub-pipe
   - match:
       fixed: imbricated
+`,
+		},
+		{
+			name:       "Stop",
+			method:     http.MethodGet,
+			path:       "/Stop",
+			statusCode: http.StatusNotFound,
+			conf: `
+- name: "Stop"
+  pipe:
+  - default:
+      match:
+        string: stop
+  - name: subPipe1
+    pipe:
+    - match:
+        string: stop
+        fixed: stop
+    stop: =true
+  - match: # will not be evaluated
+      fixed: stop
 `,
 		},
 	}

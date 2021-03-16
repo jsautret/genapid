@@ -15,7 +15,7 @@ import (
 // Evaluate a predicate from its parameters (from conf file) and
 // current context
 func Process(p conf.Predicate, c *ctx.Ctx) bool {
-	var register, pluginName, name string
+	var register, pluginName, name, stop string
 	var plugin plugins.Plugin
 	var pipe conf.Pipe
 	for k := range p {
@@ -27,6 +27,8 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 			processSet(c, p[k])
 		case "pipe":
 			assignPipe(&pipe, p[k])
+		case "stop":
+			assignStop(&stop, p[k])
 		case "name":
 			n := p[k]
 			if err := n.Decode(&name); err != nil {
@@ -44,8 +46,14 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	if pipe.Pipe != nil {
 		pipe.Name = name
 		ProcessPipe(pipe, c)
-		// Always continue after a pipe
-		return true
+		stopValue := false // Always continue after a pipe
+		if stop != "" {
+			if !conf.GetParams(c, stop, &stopValue) {
+				log.Warn().Err(errors.New("'stop' is not boolean"))
+			}
+		}
+		// Always continue after a pipe, unless stop is true
+		return !stopValue
 	}
 	if plugin == nil {
 		log.Error().Err(errors.New("No predicate found")).Msg("")
@@ -53,6 +61,10 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	}
 	log := log.With().Str("predicate", pluginName).Logger()
 	log.Debug().Msgf("Found predicate '%v'", pluginName)
+	if stop != "" {
+		log.Warn().Err(
+			errors.New("'stop' set on a predicate, ignoring")).Msg("")
+	}
 
 	argsNode := p[pluginName]
 	args := conf.Params{Name: pluginName}
@@ -77,7 +89,7 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 // Store registered results with 'register' option
 func assignRegister(register *string, n yaml.Node) {
 	if *register != "" {
-		log.Warn().Msg("Several 'register' declared, " +
+		log.Error().Msg("Several 'register' declared, " +
 			"using the first found")
 		return
 	}
@@ -128,7 +140,7 @@ func assignPlugin(plugin *plugins.Plugin, pluginName *string, k string) {
 
 func assignPipe(pipe *conf.Pipe, n yaml.Node) {
 	if pipe.Pipe != nil {
-		log.Warn().Msg("Several 'pipe' declared, " +
+		log.Error().Msg("Several 'pipe' declared, " +
 			"using the first found")
 		return
 	}
@@ -138,4 +150,16 @@ func assignPipe(pipe *conf.Pipe, n yaml.Node) {
 		return
 	}
 	pipe.Pipe = p
+}
+
+// Store 'stop' option for pipe
+func assignStop(stop *string, n yaml.Node) {
+	if *stop != "" {
+		log.Error().Msg("Several 'stop' declared, " +
+			"using the first found")
+		return
+	}
+	if err := n.Decode(stop); err != nil {
+		log.Error().Err(err).Msg("invalid 'stop'")
+	}
 }
