@@ -12,29 +12,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Evaluate a predicate from its parameters (from conf file) and
-// current context
+// Evaluate a predicate or a pipe from from conf file and current
+// context
 func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	var register, pluginName, name, stop string
 	var plugin plugins.Plugin
 	var pipe conf.Pipe
-	for k := range p {
+	// Read all options and predicate name or pipe
+	for k, v := range p {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
 		switch k {
 		case "register":
-			assignRegister(&register, p[k])
+			assignOption("register", &register, v)
 		case "set":
-			processSet(c, p[k])
-		case "pipe":
-			assignPipe(&pipe, p[k])
+			processSet(c, v)
 		case "stop":
-			assignStop(&stop, p[k])
+			assignOption("stop", &stop, v)
 		case "name":
-			n := p[k]
-			if err := n.Decode(&name); err != nil {
-				log.Error().Err(err).Msg("invalid 'name'")
-			}
+			assignOption("name", &name, v)
+		case "pipe":
+			assignPipe(&pipe, v)
 		default:
+			// Try to check if option is a predicate
 			assignPlugin(&plugin, &pluginName, k)
 		}
 	}
@@ -44,6 +43,13 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 		return false
 	}
 	if pipe.Pipe != nil {
+		log := log.With().Str("pipe", name).Logger()
+		if register != "" {
+			log.Warn().Err(
+				errors.New("'register' set on a predicate," +
+					"ignoring")).Msg("")
+		}
+
 		pipe.Name = name
 		ProcessPipe(pipe, c)
 		stopValue := false // Always continue after a pipe
@@ -86,15 +92,15 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	}
 }
 
-// Store registered results with 'register' option
-func assignRegister(register *string, n yaml.Node) {
-	if *register != "" {
-		log.Error().Msg("Several 'register' declared, " +
-			"using the first found")
+// Decode & store an option
+func assignOption(name string, option *string, n yaml.Node) {
+	if *option != "" {
+		log.Error().Msgf("Several '%v' declared, "+
+			"using the first found", name)
 		return
 	}
-	if err := n.Decode(register); err != nil {
-		log.Error().Err(err).Msg("invalid 'register'")
+	if err := n.Decode(option); err != nil {
+		log.Error().Err(err).Msgf("invalid '%v'", name)
 	}
 }
 
@@ -150,16 +156,4 @@ func assignPipe(pipe *conf.Pipe, n yaml.Node) {
 		return
 	}
 	pipe.Pipe = p
-}
-
-// Store 'stop' option for pipe
-func assignStop(stop *string, n yaml.Node) {
-	if *stop != "" {
-		log.Error().Msg("Several 'stop' declared, " +
-			"using the first found")
-		return
-	}
-	if err := n.Decode(stop); err != nil {
-		log.Error().Err(err).Msg("invalid 'stop'")
-	}
 }
