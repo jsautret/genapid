@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/zltest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -17,17 +18,22 @@ import (
 var logLevel = zerolog.FatalLevel
 
 //var logLevel = zerolog.DebugLevel
+//var logLevel = zerolog.InfoLevel
+
+var checkLog = true
 
 func TestHttpServer(t *testing.T) {
 	tt := []struct {
-		name       string
-		method     string
-		path       string
-		mime       string
-		body       string
-		want       string
-		statusCode int
-		conf       string
+		name        string
+		method      string
+		path        string
+		mime        string
+		body        string
+		want        string
+		statusCode  int
+		conf        string
+		logFound    string
+		logNotFound string
 	}{
 		{
 			name:       "EmptyConf",
@@ -41,6 +47,7 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
+			logFound:   "End",
 			conf: `
 - name: "Test simple pipe of match"
   pipe:
@@ -57,6 +64,8 @@ func TestHttpServer(t *testing.T) {
   - match:
       string: =R.some_test.matches[1]
       fixed: AAAB
+  - log:
+      msg: End
 `,
 		},
 		{
@@ -66,6 +75,7 @@ func TestHttpServer(t *testing.T) {
 			statusCode: http.StatusOK,
 			mime:       "application/json; charset=utf-8",
 			body:       `{"bodyName": "bodyValue"}`,
+			logFound:   "End",
 			conf: `
 - name: "Test pipe of match on incoming request"
   pipe:
@@ -73,10 +83,10 @@ func TestHttpServer(t *testing.T) {
       string: =In.Req.Method
       fixed: POST
   - match:
-      string: =In.Url.Params.param2[0]
+      string: =In.URL.Params.param2[0]
       fixed: value2
   - match:
-      string: =In.Url.Params.param1[0]
+      string: =In.URL.Params.param1[0]
       regexp: value[1-9]
   - match:
       string: =In.Mime
@@ -84,6 +94,8 @@ func TestHttpServer(t *testing.T) {
   - match:
       string: =jsonpath("$.bodyName", In.Body)
       fixed: bodyValue
+  - log:
+      msg: End  
 `,
 		},
 		{
@@ -91,6 +103,7 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
+			logFound:   "End",
 			conf: `
 - name: "Test 'default'"
   pipe:
@@ -113,6 +126,8 @@ func TestHttpServer(t *testing.T) {
       match:
         fixed: EEEEEE
   - match:
+  - log:
+      msg: End
 `,
 		},
 		{
@@ -120,6 +135,7 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/ImbricatedPipes",
 			statusCode: http.StatusOK,
+			logFound:   "End",
 			conf: `
 - name: "Test imbricated Pipes"
   pipe:
@@ -137,13 +153,17 @@ func TestHttpServer(t *testing.T) {
   # even if predicate fails in sub-pipe
   - match:
       fixed: imbricated
+  - log:
+      msg: End
 `,
 		},
 		{
-			name:       "Stop",
-			method:     http.MethodGet,
-			path:       "/Stop",
-			statusCode: http.StatusNotFound,
+			name:        "Stop",
+			method:      http.MethodGet,
+			path:        "/Stop",
+			statusCode:  http.StatusNotFound,
+			logFound:    "endPipe",
+			logNotFound: "NotExecuted",
 			conf: `
 - name: "Stop"
   pipe:
@@ -155,15 +175,26 @@ func TestHttpServer(t *testing.T) {
     - match:
         string: stop
         fixed: stop
+    - log:
+        msg: endPipe
     stop: =true
-  - match: # will not be evaluated
-      fixed: stop
+  - log: # will not be evaluated
+      msg: NotExecuted
 `,
 		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			var tst *zltest.Tester
+			if checkLog {
+				tst = zltest.New(t)
+				// Configure zerolog and pass tester as a writer.
+				log.Logger = zerolog.New(tst).With().Timestamp().Logger()
+				zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+			}
 			config = getConf(t, tc.conf)
+
 			request := httptest.NewRequest(tc.method, tc.path,
 				bytes.NewBuffer([]byte(tc.body)))
 			if tc.mime != "" {
@@ -172,6 +203,15 @@ func TestHttpServer(t *testing.T) {
 			responseRecorder := httptest.NewRecorder()
 
 			handler(responseRecorder, request)
+
+			if checkLog {
+				if tc.logFound != "" {
+					tst.Entries().ExpStr("log", tc.logFound)
+				}
+				if tc.logNotFound != "" {
+					tst.Entries().NotExpStr("log", tc.logNotFound)
+				}
+			}
 
 			if responseRecorder.Code != tc.statusCode {
 				t.Errorf("Want status '%d', got '%d'",

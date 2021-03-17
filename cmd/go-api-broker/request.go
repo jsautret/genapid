@@ -18,7 +18,7 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 	var err error
 
 	// Create & init context structures
-	url := &ctx.Url{
+	url := &ctx.URL{
 		Params: r.URL.Query(),
 	}
 	contentType := r.Header.Get("Content-type")
@@ -35,7 +35,7 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 	}
 	In := ctx.Request{
 		Req:  r,
-		Url:  url,
+		URL:  url,
 		Mime: m,
 		Body: string(body),
 	}

@@ -24,7 +24,7 @@ func Call(ctx *ctx.Ctx, config conf.Params) bool {
 		return false
 	}
 
-	log.Info().Str("msg", fmt.Sprintf("%v", p.Msg)).Msg("")
+	log.Info().Str("log", fmt.Sprintf("%v", p.Msg)).Msg("")
 
 	return true
 }
