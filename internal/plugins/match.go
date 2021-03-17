@@ -2,8 +2,9 @@
 
 package plugins
 
-import "github.com/jsautret/go-api-broker/predicates/match"
+import matchpredicate "github.com/jsautret/go-api-broker/predicates/match"
 
 func init() {
-	Add("match", match.Call)
+	p := matchpredicate.Get()
+	Add(p.Name(), p)
 }

@@ -1,4 +1,4 @@
-package jsonrpc
+package jsonrpcpredicate
 
 import (
 	"encoding/base64"
@@ -8,8 +8,21 @@ import (
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog/log"
-	"github.com/ybbus/jsonrpc/v2"
+	"github.com/ybbus/jsonrpc"
 )
+
+// Name returns the name the predicate
+func (Predicate) Name() string {
+	return "jsonrpc"
+}
+
+// Predicate implements the conf.Plugin interface
+type Predicate struct{}
+
+// Get returns the plugin for the jsonrpc predicate
+func Get() Predicate {
+	return Predicate{}
+}
 
 // Predicate parameters
 type params struct {
@@ -23,7 +36,7 @@ type basicAuth struct {
 }
 
 // Call evaluate the predicate
-func Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
 	var p params

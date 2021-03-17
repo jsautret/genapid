@@ -1,4 +1,4 @@
-package log
+package logpredicate
 
 import (
 	"errors"
@@ -9,13 +9,26 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Name returns the name the predicate
+func (Predicate) Name() string {
+	return "log"
+}
+
+// Get returns the plugin for the match predicate
+func Get() Predicate {
+	return Predicate{}
+}
+
+// Predicate implements the conf.Plugin interface
+type Predicate struct{}
+
 // Predicate parameters
 type params struct {
 	Msg interface{}
 }
 
 // Call evaluate a predicate
-func Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "log").Logger()
 
 	var p params

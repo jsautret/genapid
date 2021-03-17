@@ -1,22 +1,18 @@
 package plugins
 
 import (
-	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 )
 
-// Plugin is the type of the plugin entry point function
-type Plugin func(*ctx.Ctx, conf.Params) bool
-
 // Plugins store entrypoint functions of enabled plugins
-type Plugins map[string]Plugin
+type Plugins map[string]conf.Plugin
 
 var (
 	available Plugins
 )
 
 // Get returns entrypoint of Plugin, if enabled
-func Get(name string) (Plugin, bool) {
+func Get(name string) (conf.Plugin, bool) {
 	if p, ok := available[name]; ok {
 		return p, true
 	}
@@ -29,9 +25,9 @@ func List() Plugins {
 }
 
 // Add a plugin entrypoint to the enabled plugins
-func Add(name string, p Plugin) {
+func Add(name string, p conf.Plugin) {
 	if available == nil {
-		available = make(map[string]Plugin, 20)
+		available = make(Plugins, 20)
 	}
 	available[name] = p
 }

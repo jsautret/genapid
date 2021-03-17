@@ -1,4 +1,4 @@
-package match
+package matchpredicate
 
 import (
 	"os"
@@ -124,13 +124,14 @@ fixed:  "value"
 	}
 
 	for _, c := range cases {
+		var self Predicate
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
 			ctx := ctx.Ctx{
 				R:       make(map[string]map[string]interface{}),
 				Results: make(map[string]interface{}),
 			}
-			if r := Call(&ctx, conf); r != c.expected {
+			if r := self.Call(&ctx, conf); r != c.expected {
 				t.Errorf("Should have returned %v, got %v",
 					c.expected, r)
 			}
@@ -140,6 +141,8 @@ fixed:  "value"
 }
 
 func TestMatchRegexpWithRegister(t *testing.T) {
+	var self Predicate
+
 	yaml := `
 string: ABBBBCD
 regexp: A(B+.)D$
@@ -150,7 +153,7 @@ xxx: ccc
 		R:       make(map[string]map[string]interface{}),
 		Results: make(map[string]interface{}),
 	}
-	if res := Call(&ctx, conf); !res {
+	if res := self.Call(&ctx, conf); !res {
 		t.Errorf("Should have returned true")
 	} else {
 		if ctx.Results["matches"].([]string)[1] != "BBBBC" {
@@ -172,6 +175,7 @@ func TestMain(m *testing.M) {
   Benchmarck: compare predicates with and without templating
   ***************************************************************************/
 func BenchmarkNoGval(b *testing.B) {
+	var self Predicate
 	yaml := `
 string: AAAAAA
 fixed:  AAAAAA
@@ -183,10 +187,11 @@ fixed:  AAAAAA
 		Results: make(map[string]interface{}),
 	}
 	for i := 0; i < b.N; i++ {
-		Call(&ctx, conf)
+		self.Call(&ctx, conf)
 	}
 }
 func BenchmarkWithGval(b *testing.B) {
+	var self Predicate
 	yaml := `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"
@@ -198,7 +203,7 @@ fixed:  "WWWWAA"
 		Results: make(map[string]interface{}),
 	}
 	for i := 0; i < b.N; i++ {
-		Call(&ctx, conf)
+		self.Call(&ctx, conf)
 	}
 
 }

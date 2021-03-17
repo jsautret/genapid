@@ -16,7 +16,7 @@ import (
 // current context
 func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	var register, pluginName, name, stop string
-	var plugin plugins.Plugin
+	var plugin conf.Plugin
 	var pipe conf.Pipe
 	// Read all options and predicate name or pipe
 	for k, v := range p {
@@ -80,7 +80,7 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 	}
 	c.Results = make(map[string]interface{})
 
-	result := plugin(c, args)
+	result := plugin.Call(c, args)
 	log.Debug().Bool("value", result).Msg("End predicate")
 	if register != "" {
 		log.Debug().Str("register", register).
@@ -129,7 +129,7 @@ func processSet(c *ctx.Ctx, n yaml.Node) {
 
 // Find a plugin corresponding to the predicate set in the conf file
 // and set plugin & pluginName parameters accordingly
-func assignPlugin(plugin *plugins.Plugin, pluginName *string, k string) {
+func assignPlugin(plugin *conf.Plugin, pluginName *string, k string) {
 	if *plugin != nil {
 		err := fmt.Errorf("Found both '%v' & '%v', "+
 			"ignoring the later",

@@ -12,6 +12,12 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// Plugin is the interface of a predicate plugin
+type Plugin interface {
+	Name() string
+	Call(*ctx.Ctx, Params) bool
+}
+
 // Root maps the main conf file
 type Root []Pipe
 

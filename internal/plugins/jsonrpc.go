@@ -2,8 +2,9 @@
 
 package plugins
 
-import "github.com/jsautret/go-api-broker/predicates/jsonrpc"
+import jsonrpcpredicate "github.com/jsautret/go-api-broker/predicates/jsonrpc"
 
 func init() {
-	Add("jsonrpc", jsonrpc.Call)
+	p := jsonrpcpredicate.Get()
+	Add(p.Name(), p)
 }

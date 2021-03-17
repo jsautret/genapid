@@ -1,4 +1,4 @@
-package jsonrpc
+package jsonrpcpredicate
 
 import (
 	"bytes"
@@ -27,6 +27,7 @@ var (
 )
 
 func TestJsonrpc(t *testing.T) {
+	var self Predicate
 	// Start a local HTTP server
 	server := httpServerMock(t)
 	// Close the server when test finishes
@@ -124,7 +125,7 @@ basic_auth:
 				R:       make(map[string]map[string]interface{}),
 				Results: make(map[string]interface{}),
 			}
-			if r := Call(&ctx, conf); r != c.expected {
+			if r := self.Call(&ctx, conf); r != c.expected {
 				t.Errorf("Should have returned %v, got %v",
 					c.expected, r)
 			}

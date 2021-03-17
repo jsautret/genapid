@@ -2,8 +2,9 @@
 
 package plugins
 
-import "github.com/jsautret/go-api-broker/predicates/log"
+import logpredicate "github.com/jsautret/go-api-broker/predicates/log"
 
 func init() {
-	Add("log", log.Call)
+	p := logpredicate.Get()
+	Add(p.Name(), p)
 }

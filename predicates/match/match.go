@@ -1,4 +1,4 @@
-package match
+package matchpredicate
 
 import (
 	"errors"
@@ -10,6 +10,19 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Predicate implements the conf.Plugin interface
+type Predicate struct{}
+
+// Get returns the plugin for the match predicate
+func Get() Predicate {
+	return Predicate{}
+}
+
+// Name returns the name the predicate
+func (Predicate) Name() string {
+	return "match"
+}
+
 // Predicate parameters
 type params struct {
 	String string
@@ -18,7 +31,7 @@ type params struct {
 }
 
 // Call evaluate predicate
-func Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
 	var p params
