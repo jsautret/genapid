@@ -12,6 +12,7 @@ import (
 	"github.com/jsautret/zltest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -189,7 +190,8 @@ func TestHttpServer(t *testing.T) {
 			if checkLog {
 				tst = zltest.New(t)
 				// Configure zerolog and pass tester as a writer.
-				log.Logger = zerolog.New(tst).With().Timestamp().Logger()
+				log.Logger = zerolog.New(tst).With().
+					Timestamp().Logger()
 				zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 			}
@@ -209,15 +211,14 @@ func TestHttpServer(t *testing.T) {
 					tst.Entries().ExpStr("log", tc.logFound)
 				}
 				if tc.logNotFound != "" {
-					tst.Entries().NotExpStr("log", tc.logNotFound)
+					tst.Entries().NotExpStr("log",
+						tc.logNotFound)
 				}
 			}
-
 			if responseRecorder.Code != tc.statusCode {
 				t.Errorf("Want status '%d', got '%d'",
 					tc.statusCode, responseRecorder.Code)
 			}
-
 			if strings.TrimSpace(
 				responseRecorder.Body.String()) != tc.want {
 				t.Errorf("Want '%s', got '%s'",
@@ -241,7 +242,7 @@ func TestMain(m *testing.M) {
 /***************************************************************************
   Benchmarck: compare predicates with and without gval
   ***************************************************************************/
-func BenchmarkNoTemplate(b *testing.B) {
+func BenchmarkNoGval(b *testing.B) {
 	conf := `
 - name: "Test simple pipe of match without expressions"
   pipe:
@@ -257,7 +258,7 @@ func BenchmarkNoTemplate(b *testing.B) {
       fixed: AAAB
 `
 	zerolog.SetGlobalLevel(logLevel)
-	config = getConfB(conf)
+	config = getConfB(b, conf)
 	request := httptest.NewRequest(http.MethodGet, "/bench", nil)
 	responseRecorder := httptest.NewRecorder()
 	for i := 0; i < b.N; i++ {
@@ -265,7 +266,7 @@ func BenchmarkNoTemplate(b *testing.B) {
 	}
 
 }
-func BenchmarkWithTemplate(b *testing.B) {
+func BenchmarkWithGval(b *testing.B) {
 	conf := `
 - name: "Test simple pipe of match with expressions"
   pipe:
@@ -281,13 +282,12 @@ func BenchmarkWithTemplate(b *testing.B) {
       fixed: AAAB
 `
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
-	config = getConfB(conf)
+	config = getConfB(b, conf)
 	request := httptest.NewRequest(http.MethodGet, "/bench", nil)
 	responseRecorder := httptest.NewRecorder()
 	for i := 0; i < b.N; i++ {
 		handler(responseRecorder, request)
 	}
-
 }
 
 /***************************************************************************
@@ -303,8 +303,8 @@ func getConf(t *testing.T, source string) conf.Root {
 	return c
 }
 
-func getConfB(source string) conf.Root {
+func getConfB(b *testing.B, source string) conf.Root {
 	c := conf.Root{}
-	yaml.Unmarshal([]byte(source), &c)
+	require.Nil(b, yaml.Unmarshal([]byte(source), &c))
 	return c
 }

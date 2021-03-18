@@ -10,13 +10,18 @@ import (
 )
 
 // Name returns the name the predicate
-func (Predicate) Name() string {
+func (*Predicate) Name() string {
 	return "log"
 }
 
 // Get returns the plugin for the match predicate
-func Get() Predicate {
-	return Predicate{}
+func Get() *Predicate {
+	return &Predicate{}
+}
+
+// Result returns nil as there is no result for this predicate
+func (predicate *Predicate) Result() ctx.Result {
+	return nil
 }
 
 // Predicate implements the conf.Plugin interface
@@ -28,7 +33,7 @@ type params struct {
 }
 
 // Call evaluate a predicate
-func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (*Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
 	log := log.With().Str("predicate", "log").Logger()
 
 	var p params

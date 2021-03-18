@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"net/http"
 	"os"
 	"testing"
 
@@ -162,10 +161,8 @@ l1:
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			context := ctx.Ctx{
-				In: ctx.Request{Req: &http.Request{Method: "POST"}},
-				R:  make(ctx.Registered),
-			}
+			context := ctx.New()
+			context.In.Req.Method = "POST"
 			context.V = ctx.Variables{
 				"variable1": "value1",
 				"variable2": []string{"value21", "value22"},
@@ -179,7 +176,7 @@ l1:
 				"fuzzy": []string{"cartwheel", "foobar", "wheel", "baz"},
 			}
 			p := params{}
-			if !GetPredicateParams(&context, conf, &p) {
+			if !GetPredicateParams(context, &conf, &p) {
 				t.Errorf("Cannot convert params %v", conf)
 			} else {
 				//fmt.Printf("I %v\n", reflect.ValueOf(p.I).Kind())

@@ -13,8 +13,7 @@ import (
 
 // Global conf
 var (
-	LogLevel zerolog.Level
-	config   conf.Root
+	config conf.Root
 )
 
 // Command line flags variables

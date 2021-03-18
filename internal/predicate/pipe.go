@@ -7,7 +7,7 @@ import (
 )
 
 // ProcessPipe evaluate a pipe of predicates
-func ProcessPipe(p conf.Pipe, c *ctx.Ctx) bool {
+func ProcessPipe(p *conf.Pipe, c *ctx.Ctx) bool {
 	name := p.Name
 	log := log.With().Str("pipe", name).Logger()
 
@@ -15,7 +15,7 @@ func ProcessPipe(p conf.Pipe, c *ctx.Ctx) bool {
 
 	var result bool
 	for j := 0; j < len(p.Pipe); j++ {
-		result = Process(p.Pipe[j], c)
+		result = Process(&p.Pipe[j], c)
 		if !result {
 			break
 		}

@@ -160,7 +160,7 @@ func convertElem(v reflect.Value, c *ctx.Ctx) reflect.Value {
 // Evaluate string if it's a Gval expression and return its value
 func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 	if s != "" && s[0] == '=' {
-		return gval.Evaluate(s[1:], c.ToInterface(),
+		return gval.Evaluate(s[1:], c,
 			jsonpath.Language(), jsonpathFunction(),
 			pipeOperator(), fuzzyFunction())
 	}

@@ -14,12 +14,12 @@ import (
 
 // Process evaluate a predicate or a pipe from from conf file and
 // current context
-func Process(p conf.Predicate, c *ctx.Ctx) bool {
+func Process(p *conf.Predicate, c *ctx.Ctx) bool {
 	var register, pluginName, name, stop string
 	var plugin conf.Plugin
 	var pipe conf.Pipe
 	// Read all options and predicate name or pipe
-	for k, v := range p {
+	for k, v := range *p {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
 		switch k {
 		case "register":
@@ -51,7 +51,7 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 		}
 
 		pipe.Name = name
-		ProcessPipe(pipe, c)
+		ProcessPipe(&pipe, c)
 		stopValue := false // Always continue after a pipe
 		if stop != "" {
 			if !conf.GetParams(c, stop, &stopValue) {
@@ -72,20 +72,19 @@ func Process(p conf.Predicate, c *ctx.Ctx) bool {
 			errors.New("'stop' set on a predicate, ignoring")).Msg("")
 	}
 
-	argsNode := p[pluginName]
+	argsNode := (*p)[pluginName]
 	args := conf.Params{Name: pluginName}
 	if err := argsNode.Decode(&(args.Conf)); err != nil {
 		log.Error().Err(err).Msg("Parameters must be a dict")
 		return false
 	}
-	c.Results = make(map[string]interface{})
 
-	result := plugin.Call(c, args)
+	result := plugin.Call(c, &args)
 	log.Debug().Bool("value", result).Msg("End predicate")
 	if register != "" {
 		log.Debug().Str("register", register).
 			Msgf("Register result to %v", register)
-		c.R[register] = c.Results
+		c.R[register] = plugin.Result()
 		c.R[register]["result"] = result
 	}
 	return result

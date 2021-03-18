@@ -39,17 +39,14 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 		Mime: m,
 		Body: string(body),
 	}
-	c := ctx.Ctx{
-		In:      In,
-		R:       make(ctx.Registered),
-		V:       make(ctx.Variables),
-		Default: make(ctx.Default),
-	}
+	c := ctx.New()
+	c.In = In
 
 	// Process each pipe
 	var res bool
 	for i := 0; i < len(config); i++ {
-		res = predicate.ProcessPipe(config[i], &c)
+		pc := config[i]
+		res = predicate.ProcessPipe(&pc, c)
 	}
 	log.Debug().Str("http", "end").Str("path", r.URL.Path).
 		Msg("HTTP request processed")

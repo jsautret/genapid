@@ -14,7 +14,7 @@ import (
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var logLevel = zerolog.FatalLevel
@@ -121,11 +121,8 @@ basic_auth:
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			ctx := ctx.Ctx{
-				R:       make(map[string]map[string]interface{}),
-				Results: make(map[string]interface{}),
-			}
-			if r := self.Call(&ctx, conf); r != c.expected {
+			ctx := ctx.New()
+			if r := self.Call(ctx, &conf); r != c.expected {
 				t.Errorf("Should have returned %v, got %v",
 					c.expected, r)
 			}

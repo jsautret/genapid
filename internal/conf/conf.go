@@ -1,6 +1,8 @@
 // Package conf provides access and convert data from configuration file
 package conf
 
+//go:generate mockery --name Plugin
+
 import (
 	"errors"
 	"io/ioutil"
@@ -15,7 +17,8 @@ import (
 // Plugin is the interface of a predicate plugin
 type Plugin interface {
 	Name() string
-	Call(*ctx.Ctx, Params) bool
+	Call(*ctx.Ctx, *Params) bool
+	Result() ctx.Result
 }
 
 // Root maps the main conf file
@@ -52,7 +55,7 @@ func Read(filename string) Root {
 }
 
 // AddDefault adds predicate default parameters to context
-func AddDefault(c *ctx.Ctx, defaultConf Params) {
+func AddDefault(c *ctx.Ctx, defaultConf *Params) {
 	log.Debug().Interface("default", defaultConf).Msg("Setting default fields")
 	// for each predicate
 	for predicate, value := range defaultConf.Conf {
@@ -79,7 +82,7 @@ func AddDefault(c *ctx.Ctx, defaultConf Params) {
 
 // GetPredicateParams from default and from the conf, with Gval
 // expressions evaluated
-func GetPredicateParams(ctx *ctx.Ctx, config Params, params interface{}) bool {
+func GetPredicateParams(ctx *ctx.Ctx, config *Params, params interface{}) bool {
 	// set predicate default parameters
 	if !GetParams(ctx, ctx.Default[config.Name], params) {
 		log.Error().Msg("Incorrect 'default' fields")

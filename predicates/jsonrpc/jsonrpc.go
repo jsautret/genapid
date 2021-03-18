@@ -12,16 +12,26 @@ import (
 )
 
 // Name returns the name the predicate
-func (Predicate) Name() string {
+func (*Predicate) Name() string {
 	return "jsonrpc"
 }
 
 // Predicate implements the conf.Plugin interface
-type Predicate struct{}
+type Predicate struct {
+	// Response is the return of the jsonrpc server
+	Response interface{}
+}
+
+// Result returns response of the jsonrpc server
+func (predicate *Predicate) Result() ctx.Result {
+	return ctx.Result{
+		"response": predicate.Response,
+	}
+}
 
 // Get returns the plugin for the jsonrpc predicate
-func Get() Predicate {
-	return Predicate{}
+func Get() *Predicate {
+	return &Predicate{}
 }
 
 // Predicate parameters
@@ -36,7 +46,7 @@ type basicAuth struct {
 }
 
 // Call evaluate the predicate
-func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
 	log := log.With().Str("predicate", "jsonrpc").Logger()
 
 	var p params
@@ -74,7 +84,7 @@ func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
 		return false
 	}
 	log.Debug().Interface("result", result).Msg("Server response")
-	ctx.Results["response"] = result
+	predicate.Response = result
 	return true
 }
 

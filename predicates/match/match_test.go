@@ -6,8 +6,10 @@ import (
 
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -127,11 +129,8 @@ fixed:  "value"
 		var self Predicate
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
-			ctx := ctx.Ctx{
-				R:       make(map[string]map[string]interface{}),
-				Results: make(map[string]interface{}),
-			}
-			if r := self.Call(&ctx, conf); r != c.expected {
+			ctx := ctx.New()
+			if r := self.Call(ctx, conf); r != c.expected {
 				t.Errorf("Should have returned %v, got %v",
 					c.expected, r)
 			}
@@ -149,16 +148,13 @@ regexp: A(B+.)D$
 xxx: ccc
 `
 	conf := getConf(t, yaml)
-	ctx := ctx.Ctx{
-		R:       make(map[string]map[string]interface{}),
-		Results: make(map[string]interface{}),
-	}
-	if res := self.Call(&ctx, conf); !res {
+	ctx := ctx.New()
+	if res := self.Call(ctx, conf); !res {
 		t.Errorf("Should have returned true")
 	} else {
-		if ctx.Results["matches"].([]string)[1] != "BBBBC" {
-			t.Errorf("Should have match BBBBC, not %v",
-				ctx.Results["matches"].([]string)[1])
+		if r := self.Result()["matches"].([]string); len(r) == 0 ||
+			r[1] != "BBBBC" {
+			t.Errorf("Should have match BBBBC, not %v", r)
 		}
 	}
 
@@ -181,13 +177,10 @@ string: AAAAAA
 fixed:  AAAAAA
 `
 	zerolog.SetGlobalLevel(logLevel)
-	conf := getConfB(yaml)
-	ctx := ctx.Ctx{
-		R:       make(map[string]map[string]interface{}),
-		Results: make(map[string]interface{}),
-	}
+	conf := getConfB(b, yaml)
+	ctx := ctx.New()
 	for i := 0; i < b.N; i++ {
-		self.Call(&ctx, conf)
+		self.Call(ctx, conf)
 	}
 }
 func BenchmarkWithGval(b *testing.B) {
@@ -197,13 +190,10 @@ string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"
 `
 	zerolog.SetGlobalLevel(logLevel)
-	conf := getConfB(yaml)
-	ctx := ctx.Ctx{
-		R:       make(map[string]map[string]interface{}),
-		Results: make(map[string]interface{}),
-	}
+	conf := getConfB(b, yaml)
+	ctx := ctx.New()
 	for i := 0; i < b.N; i++ {
-		self.Call(&ctx, conf)
+		self.Call(ctx, conf)
 	}
 
 }
@@ -211,16 +201,18 @@ fixed:  "WWWWAA"
 /***************************************************************************
   Helpers
   ***************************************************************************/
-func getConf(t *testing.T, source string) conf.Params {
+func getConf(t *testing.T, source string) *conf.Params {
 	c := conf.Params{Name: "test"}
-	if err := yaml.Unmarshal([]byte(source), &c.Conf); err != nil {
-		t.Errorf("Should not have returned parsing error")
-	}
-	return c
+	require.Nil(t,
+		yaml.Unmarshal([]byte(source), &c.Conf), "YAML parsing failed")
+	t.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
+
+	return &c
 }
 
-func getConfB(source string) conf.Params {
-	c := conf.Params{}
-	yaml.Unmarshal([]byte(source), &c)
-	return c
+func getConfB(b *testing.B, source string) *conf.Params {
+	c := conf.Params{Name: "bench"}
+	require.Nil(b,
+		yaml.Unmarshal([]byte(source), &c.Conf))
+	return &c
 }

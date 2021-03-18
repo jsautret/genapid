@@ -11,15 +11,22 @@ import (
 )
 
 // Predicate implements the conf.Plugin interface
-type Predicate struct{}
+type Predicate struct {
+	matches []string // result of regexp match
+}
 
 // Get returns the plugin for the match predicate
-func Get() Predicate {
-	return Predicate{}
+func Get() *Predicate {
+	return &Predicate{}
+}
+
+// Result returns stings matched by regexp
+func (predicate *Predicate) Result() ctx.Result {
+	return ctx.Result{"matches": predicate.matches}
 }
 
 // Name returns the name the predicate
-func (Predicate) Name() string {
+func (*Predicate) Name() string {
 	return "match"
 }
 
@@ -31,7 +38,7 @@ type params struct {
 }
 
 // Call evaluate predicate
-func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
+func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
 	log := log.With().Str("predicate", "match").Logger()
 
 	var p params
@@ -63,7 +70,7 @@ func (Predicate) Call(ctx *ctx.Ctx, config conf.Params) bool {
 			return false
 		}
 		log.Debug().Msgf("'regexp' matched %v", res)
-		ctx.Results["matches"] = res
+		predicate.matches = res
 		return true
 	}
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
