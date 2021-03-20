@@ -15,7 +15,7 @@ var Name = "log"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		Msg string
+		Msg interface{}
 	}
 }
 
