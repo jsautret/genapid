@@ -66,8 +66,8 @@ type Result map[string]interface{}
 // Variables set by the 'set' option
 type Variables map[string]interface{}
 
-// Results of a predicate
-type Results map[string]interface{}
+// Default stores predicates values, set by 'default' predicate
+type Default map[string]DefaultParams
 
-// Default predicates values, set by 'default' predicate
-type Default map[string]map[string]interface{}
+// DefaultParams stores the default parameters for a predicate type
+type DefaultParams map[string]interface{}

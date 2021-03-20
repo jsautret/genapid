@@ -1,8 +1,6 @@
 // Package conf provides access and convert data from configuration file
 package conf
 
-//go:generate mockery --name Plugin
-
 import (
 	"errors"
 	"io/ioutil"
@@ -13,13 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v3"
 )
-
-// Plugin is the interface of a predicate plugin
-type Plugin interface {
-	Name() string
-	Call(*ctx.Ctx, *Params) bool
-	Result() ctx.Result
-}
 
 // Root maps the main conf file
 type Root []Pipe
@@ -55,25 +46,20 @@ func Read(filename string) Root {
 }
 
 // AddDefault adds predicate default parameters to context
-func AddDefault(c *ctx.Ctx, defaultConf *Params) {
+func AddDefault(c *ctx.Ctx, defaultConf *ctx.DefaultParams) {
 	log.Debug().Interface("default", defaultConf).Msg("Setting default fields")
 	// for each predicate
-	for predicate, value := range defaultConf.Conf {
-		if conf, ok := value.(map[string]interface{}); !ok {
+	for predicate, value := range *defaultConf {
+		log.Trace().Interface("default", value).Msg("Setting default fields for " + predicate)
+		if _, ok := c.Default[predicate]; !ok {
+			// no default value yet for that predicate
+			c.Default[predicate] = make(map[string]interface{})
+		}
+		def := c.Default[predicate]
+		if !GetParams(c, value, &def) {
 			log.Error().
-				Err(errors.New("'default' in not a dict")).
+				Err(errors.New("Invalid 'default' value")).
 				Str("predicate", predicate).Msg("")
-		} else {
-			if _, ok = c.Default[predicate]; !ok {
-				// no default value yet for that predicate
-				c.Default[predicate] = make(map[string]interface{})
-			}
-			def := c.Default[predicate]
-			if !GetParams(c, conf, &def) {
-				log.Error().
-					Err(errors.New("Invalid 'default' value")).
-					Str("predicate", predicate).Msg("")
-			}
 		}
 		log.Trace().Interface("default", c.Default[predicate]).
 			Str("predicate", predicate).Msg("'default'")

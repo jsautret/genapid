@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -205,15 +207,13 @@ func TestMain(m *testing.M) {
   ***************************************************************************/
 func getConf(t *testing.T, source string) Params {
 	c := Params{Name: "test"}
-	if err := yaml.Unmarshal([]byte(source), &(c.Conf)); err != nil {
-		t.Fatalf("YAML parsing error: %v", err)
-	}
+	require.Nil(t, yaml.Unmarshal([]byte(source), &(c.Conf)), "YAML parsing error: %v")
 	return c
 }
 
-func getConfB(source string) Params {
+func getConfB(b *testing.B, source string) Params {
 	c := Params{}
-	yaml.Unmarshal([]byte(source), &c)
+	require.Nil(b, json.Unmarshal([]byte(source), &c))
 	return c
 }
 

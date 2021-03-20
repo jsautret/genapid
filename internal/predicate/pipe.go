@@ -15,7 +15,7 @@ func ProcessPipe(p *conf.Pipe, c *ctx.Ctx) bool {
 
 	var result bool
 	for j := 0; j < len(p.Pipe); j++ {
-		result = Process(&p.Pipe[j], c)
+		result = Process(log, &p.Pipe[j], c)
 		if !result {
 			break
 		}

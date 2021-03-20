@@ -11,9 +11,13 @@ import (
 	"testing"
 
 	"github.com/jsautret/go-api-broker/ctx"
+	"github.com/jsautret/go-api-broker/genapid"
 	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,7 +31,6 @@ var (
 )
 
 func TestJsonrpc(t *testing.T) {
-	var self Predicate
 	// Start a local HTTP server
 	server := httpServerMock(t)
 	// Close the server when test finishes
@@ -74,9 +77,6 @@ url: ` + server.URL + `/test_OneStringParam
 procedure: test1
 params:
   param1: value1
-basic_auth:
-  username: kodi
-  password: ghghpczyuq
 `,
 			expected: true,
 		},
@@ -87,8 +87,8 @@ url: ` + server.URL + `/test_OneIntParam
 procedure: test1
 params: 42
 basic_auth:
-  username: kodi
-  password: ghghpczyuq
+  username: User1
+  password: pass
 `,
 			expected: true,
 		},
@@ -101,8 +101,8 @@ params:
   - 8
   - value2
 basic_auth:
-  username: kodi
-  password: ghghpczyuq
+  username: USER1
+  password: passwd1
 `,
 			expected: true,
 		},
@@ -118,15 +118,21 @@ basic_auth:
 			expected: true,
 		},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			conf := getConf(t, c.conf)
-			ctx := ctx.New()
-			if r := self.Call(ctx, &conf); r != c.expected {
-				t.Errorf("Should have returned %v, got %v",
-					c.expected, r)
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New()
+			cfg := getConf(t, tc.conf)
+			c := ctx.New()
+			if assert.True(t,
+				genapid.InitPredicate(log.Logger, c, p, cfg)) {
+				assert.Equal(t,
+					tc.expected, p.Call(log.Logger))
 			}
 		})
+
 	}
 }
 
@@ -147,11 +153,14 @@ func httpServerMock(t *testing.T) *httptest.Server {
 		t.Logf("URL: %v", r.URL.String())
 		switch r.URL.Path {
 		case "/test_Empty":
-			rw.Write([]byte(``))
+			_, err := rw.Write([]byte(``))
+			assert.Nil(t, err)
 		case "/test_InvalidJson":
-			rw.Write([]byte(`Not valid JSON`))
+			_, err := rw.Write([]byte(`Not valid JSON`))
+			assert.Nil(t, err)
 		case "/test_IntegerResponse":
-			rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			_, err := rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			assert.Nil(t, err)
 
 		case "/test_OneStringParam":
 			type jsonResponse struct {
@@ -160,7 +169,8 @@ func httpServerMock(t *testing.T) *httptest.Server {
 				Params          map[string]string
 			}
 			response := jsonResponse{}
-			if err := json.Unmarshal(streamToByte(r.Body), &response); err != nil {
+			if err := json.Unmarshal(streamToByte(t, r.Body),
+				&response); err != nil {
 				t.Fatalf("Received unvalid JSON: %v", err)
 			}
 			if response.Method != "test1" {
@@ -170,10 +180,11 @@ func httpServerMock(t *testing.T) *httptest.Server {
 			if v != "value1" {
 				t.Fatalf("Received param1 value %v, expected value1", v)
 			}
-			rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			_, err := rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			assert.Nil(t, err)
 
 		case "/test_OneIntParam":
-			body := streamToByte(r.Body)
+			body := streamToByte(t, r.Body)
 			type jsonResponse2 struct {
 				Method, Jsonrpc string
 				ID              int
@@ -192,10 +203,11 @@ func httpServerMock(t *testing.T) *httptest.Server {
 			if len(v) != 1 || v[0] != 42 {
 				t.Fatalf("Received param1 value %v, expected [42]", v)
 			}
-			rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			_, err := rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			assert.Nil(t, err)
 
 		case "/test_ListParam":
-			body := streamToByte(r.Body)
+			body := streamToByte(t, r.Body)
 			t.Logf("%s", body)
 			type jsonResponse struct {
 				Method, Jsonrpc string
@@ -210,7 +222,8 @@ func httpServerMock(t *testing.T) *httptest.Server {
 			if int(v[0].(float64)) != 8 || v[1].(string) != "value2" {
 				t.Fatalf("Received value %v, expected [8, \"value2\"]", v)
 			}
-			rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			_, err := rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			assert.Nil(t, err)
 
 		case "/test_BasicAuth":
 			user, pass, ok := r.BasicAuth()
@@ -221,7 +234,9 @@ func httpServerMock(t *testing.T) *httptest.Server {
 				t.Fatalf("expected true, (%v,%v), got %v,(%v,%v)",
 					username, password, ok, user, pass)
 			}
-			rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			_, err := rw.Write([]byte(`{"jsonrpc": "2.0", "result": 1, "id": 0}`))
+			assert.Nil(t, err)
+
 		default:
 			t.Fatalf("Unexpected path: %v", r.URL.Path)
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -235,22 +250,18 @@ func httpServerMock(t *testing.T) *httptest.Server {
 /***************************************************************************
   Helpers
   ***************************************************************************/
-func getConf(t *testing.T, source string) conf.Params {
-	c := conf.Params{Name: "test"}
-	if err := yaml.Unmarshal([]byte(source), &c.Conf); err != nil {
-		t.Errorf("Should not have returned parsing error")
-	}
-	return c
-}
-
-func getConfB(source string) conf.Params {
+func getConf(t *testing.T, source string) *conf.Params {
 	c := conf.Params{}
-	yaml.Unmarshal([]byte(source), &c)
-	return c
+	require.Nil(t,
+		yaml.Unmarshal([]byte(source), &c.Conf), "YAML parsing failed")
+	t.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
+
+	return &c
 }
 
-func streamToByte(stream io.Reader) []byte {
+func streamToByte(t *testing.T, stream io.Reader) []byte {
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
+	_, err := buf.ReadFrom(stream)
+	require.Nil(t, err)
 	return buf.Bytes()
 }

@@ -6,54 +6,31 @@ import (
 	"fmt"
 
 	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/rs/zerolog/log"
+	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/rs/zerolog"
 	"github.com/ybbus/jsonrpc"
 )
 
-// Name returns the name the predicate
-func (*Predicate) Name() string {
-	return "jsonrpc"
-}
+// Name of the predicate
+var Name = "jsonrpc"
 
-// Predicate implements the conf.Plugin interface
+// Predicate is the conf.Plugin interface that describes the predicate
 type Predicate struct {
-	// Response is the return of the jsonrpc server
-	Response interface{}
-}
-
-// Result returns response of the jsonrpc server
-func (predicate *Predicate) Result() ctx.Result {
-	return ctx.Result{
-		"response": predicate.Response,
+	name   string
+	params struct { // Params accepted by the predicate
+		URL       string
+		Procedure string
+		Params    interface{} `mapstructure:",omitempty"`
+		BasicAuth *basicAuth  `mapstructure:"basic_auth,omitempty"`
 	}
+	results ctx.Result // response of of jsonrpc server
 }
 
-// Get returns the plugin for the jsonrpc predicate
-func Get() *Predicate {
-	return &Predicate{}
-}
-
-// Predicate parameters
-type params struct {
-	URL       string
-	Procedure string
-	Params    interface{} `mapstructure:",omitempty"`
-	BasicAuth *basicAuth  `mapstructure:"basic_auth,omitempty"`
-}
-type basicAuth struct {
-	Username, Password string
-}
+type basicAuth struct{ Username, Password string }
 
 // Call evaluate the predicate
-func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
-	log := log.With().Str("predicate", "jsonrpc").Logger()
-
-	var p params
-	if !conf.GetPredicateParams(ctx, config, &p) {
-		log.Error().Err(errors.New("Invalid params")).Msg("")
-		return false
-	}
+func (predicate *Predicate) Call(log zerolog.Logger) bool {
+	p := predicate.params
 	if p.URL == "" || p.Procedure == "" {
 		log.Error().Err(errors.New("Missing parameters")).Msg("")
 		return false
@@ -84,7 +61,8 @@ func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
 		return false
 	}
 	log.Debug().Interface("result", result).Msg("Server response")
-	predicate.Response = result
+	predicate.results = ctx.Result{"response": result}
+
 	return true
 }
 
@@ -99,4 +77,29 @@ func getParams(p interface{}) interface{} {
 		return mapString
 	}
 	return p
+}
+
+// Generic interface //
+
+// Result returns data set by the predicate
+func (predicate *Predicate) Result() ctx.Result {
+	return predicate.results
+}
+
+// Name returns the name of the predicate
+func (predicate *Predicate) Name() string {
+	return predicate.name
+}
+
+// Params returns a reference to an empty struct describing the
+// params accepted by the predicate
+func (predicate *Predicate) Params() interface{} {
+	return &predicate.params
+}
+
+// New returns a new Predicate
+func New() genapid.Predicate {
+	return &Predicate{
+		name: Name,
+	}
 }

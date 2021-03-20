@@ -5,48 +5,27 @@ import (
 	"regexp"
 
 	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/conf"
-
-	"github.com/rs/zerolog/log"
+	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/rs/zerolog"
 )
 
-// Predicate implements the conf.Plugin interface
+// Name of the predicate
+var Name = "match"
+
+// Predicate is the conf.Plugin interface that describes the predicate
 type Predicate struct {
-	matches []string // result of regexp match
-}
-
-// Get returns the plugin for the match predicate
-func Get() *Predicate {
-	return &Predicate{}
-}
-
-// Result returns stings matched by regexp
-func (predicate *Predicate) Result() ctx.Result {
-	return ctx.Result{"matches": predicate.matches}
-}
-
-// Name returns the name the predicate
-func (*Predicate) Name() string {
-	return "match"
-}
-
-// Predicate parameters
-type params struct {
-	String string
-	Fixed  string
-	Regexp string
-}
-
-// Call evaluate predicate
-func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
-	log := log.With().Str("predicate", "match").Logger()
-
-	var p params
-	if !conf.GetPredicateParams(ctx, config, &p) {
-		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
-		return false
+	name   string
+	params struct { // Params accepted by the predicate
+		String string
+		Fixed  string
+		Regexp string
 	}
+	results ctx.Result // result of regexp match
+}
 
+// Call evaluate the predicate
+func (predicate *Predicate) Call(log zerolog.Logger) bool {
+	p := predicate.params
 	if p.String == "" {
 		log.Error().Err(errors.New("'string' is missing or empty")).
 			Msg("")
@@ -70,9 +49,34 @@ func (predicate *Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
 			return false
 		}
 		log.Debug().Msgf("'regexp' matched %v", res)
-		predicate.matches = res
+		predicate.results = ctx.Result{"matches": res}
 		return true
 	}
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
 	return false
+}
+
+// Generic interface //
+
+// Result returns data set by the predicate
+func (predicate *Predicate) Result() ctx.Result {
+	return predicate.results
+}
+
+// Name returns the name of the predicate
+func (predicate *Predicate) Name() string {
+	return predicate.name
+}
+
+// Params returns a reference to an empty struct describing the
+// params accepted by the predicate
+func (predicate *Predicate) Params() interface{} {
+	return &predicate.params
+}
+
+// New returns a new Predicate
+func New() genapid.Predicate {
+	return &Predicate{
+		name: Name,
+	}
 }

@@ -18,12 +18,9 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.DebugLevel
-//var logLevel = zerolog.InfoLevel
-
 var checkLog = true
 
-func TestHttpServer(t *testing.T) {
+func TestFullConf(t *testing.T) {
 	tt := []struct {
 		name        string
 		method      string
@@ -48,9 +45,9 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
-			logFound:   "End",
+			logFound:   "EndPipeOfMatch",
 			conf: `
-- name: "Test simple pipe of match"
+- name: "Test PipeOfMatch"
   pipe:
   - match:
       string:  AAAAAA
@@ -66,7 +63,7 @@ func TestHttpServer(t *testing.T) {
       string: =R.some_test.matches[1]
       fixed: AAAB
   - log:
-      msg: End
+      msg: EndPipeOfMatch
 `,
 		},
 		{
@@ -76,9 +73,9 @@ func TestHttpServer(t *testing.T) {
 			statusCode: http.StatusOK,
 			mime:       "application/json; charset=utf-8",
 			body:       `{"bodyName": "bodyValue"}`,
-			logFound:   "End",
+			logFound:   "EndIncomingHttpMatching",
 			conf: `
-- name: "Test pipe of match on incoming request"
+- name: "Test IncomingHttpMatching"
   pipe:
   - match:
       string: =In.Req.Method
@@ -96,7 +93,7 @@ func TestHttpServer(t *testing.T) {
       string: =jsonpath("$.bodyName", In.Body)
       fixed: bodyValue
   - log:
-      msg: End  
+      msg: EndIncomingHttpMatching
 `,
 		},
 		{
@@ -104,9 +101,9 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
-			logFound:   "End",
+			logFound:   "EndDefaultFields",
 			conf: `
-- name: "Test 'default'"
+- name: "Test DefaultFields"
   pipe:
   - default:
       match:
@@ -128,7 +125,7 @@ func TestHttpServer(t *testing.T) {
         fixed: EEEEEE
   - match:
   - log:
-      msg: End
+      msg: EndDefaultFields
 `,
 		},
 		{
@@ -136,9 +133,9 @@ func TestHttpServer(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/ImbricatedPipes",
 			statusCode: http.StatusOK,
-			logFound:   "End",
+			logFound:   "EndImbricatedPipes",
 			conf: `
-- name: "Test imbricated Pipes"
+- name: "Test ImbricatedPipes"
   pipe:
   - default:
       match:
@@ -155,7 +152,7 @@ func TestHttpServer(t *testing.T) {
   - match:
       fixed: imbricated
   - log:
-      msg: End
+      msg: EndImbricatedPipes
 `,
 		},
 		{

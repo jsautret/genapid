@@ -1,48 +1,53 @@
 package logpredicate
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/rs/zerolog/log"
+	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/rs/zerolog"
 )
 
-// Name returns the name the predicate
-func (*Predicate) Name() string {
-	return "log"
-}
+// Name of the predicate
+var Name = "log"
 
-// Get returns the plugin for the match predicate
-func Get() *Predicate {
-	return &Predicate{}
-}
-
-// Result returns nil as there is no result for this predicate
-func (predicate *Predicate) Result() ctx.Result {
-	return nil
-}
-
-// Predicate implements the conf.Plugin interface
-type Predicate struct{}
-
-// Predicate parameters
-type params struct {
-	Msg interface{}
+// Predicate is the conf.Plugin interface that describes the predicate
+type Predicate struct {
+	name   string
+	params struct { // Params accepted by the predicate
+		Msg string
+	}
 }
 
 // Call evaluate a predicate
-func (*Predicate) Call(ctx *ctx.Ctx, config *conf.Params) bool {
-	log := log.With().Str("predicate", "log").Logger()
-
-	var p params
-	if !conf.GetPredicateParams(ctx, config, &p) {
-		log.Error().Err(errors.New("Invalid params, aborting")).Msg("")
-		return false
-	}
-
-	log.Info().Str("log", fmt.Sprintf("%v", p.Msg)).Msg("")
+func (predicate *Predicate) Call(log zerolog.Logger) bool {
+	log.Info().Str("log", fmt.Sprintf("%v", predicate.params.Msg)).Msg("")
 
 	return true
+}
+
+// Generic interface //
+
+// Result returns data set by the predicate
+func (predicate *Predicate) Result() ctx.Result {
+	// no data is set by log
+	return ctx.Result{}
+}
+
+// Name returns the name of the predicate
+func (predicate *Predicate) Name() string {
+	return predicate.name
+}
+
+// Params returns a reference to an empty struct describing the
+// params accepted by the predicate
+func (predicate *Predicate) Params() interface{} {
+	return &predicate.params
+}
+
+// New returns a new Predicate
+func New() genapid.Predicate {
+	return &Predicate{
+		name: Name,
+	}
 }

@@ -1,22 +1,22 @@
 package plugins
 
 import (
-	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/go-api-broker/genapid"
 )
 
 // Plugins store entrypoint functions of enabled plugins
-type Plugins map[string]conf.Plugin
+type Plugins map[string]func() genapid.Predicate
 
 var (
 	available Plugins
 )
 
 // Get returns entrypoint of Plugin, if enabled
-func Get(name string) (conf.Plugin, bool) {
-	if p, ok := available[name]; ok {
-		return p, true
+func Get(name string) genapid.Predicate {
+	if new, ok := available[name]; ok {
+		return new()
 	}
-	return nil, false
+	return nil
 }
 
 // List available plugins
@@ -25,9 +25,9 @@ func List() Plugins {
 }
 
 // Add a plugin entrypoint to the enabled plugins
-func Add(name string, p conf.Plugin) {
+func Add(name string, new func() genapid.Predicate) {
 	if available == nil {
 		available = make(Plugins, 20)
 	}
-	available[name] = p
+	available[name] = new
 }

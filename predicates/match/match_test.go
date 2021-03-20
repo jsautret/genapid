@@ -5,23 +5,26 @@ import (
 	"testing"
 
 	"github.com/jsautret/go-api-broker/ctx"
+	"github.com/jsautret/go-api-broker/genapid"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.DebugLevel
+//var logLevel = zerolog.TraceLevel
 
 func TestMatch(t *testing.T) {
 	cases := []struct {
-		name     string
-		conf     string
-		expected bool
+		name       string
+		conf       string
+		expected   bool
+		expResults []string
 	}{
 		{
 			name:     "NoConf",
@@ -97,7 +100,8 @@ regexp: "AA(AA"
 string: ABBBBCD
 regexp: A(B+.)D$
 `,
-			expected: true,
+			expected:   true,
+			expResults: []string{"ABBBBCD", "BBBBC"},
 		},
 		{
 			name: "RegexpNotMatched",
@@ -125,84 +129,67 @@ fixed:  "value"
 		},
 	}
 
-	for _, c := range cases {
-		var self Predicate
-		t.Run(c.name, func(t *testing.T) {
-			conf := getConf(t, c.conf)
-			ctx := ctx.New()
-			if r := self.Call(ctx, conf); r != c.expected {
-				t.Errorf("Should have returned %v, got %v",
-					c.expected, r)
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := New()
+			cfg := getConf(t, tc.conf)
+			c := ctx.New()
+			if assert.True(t,
+				genapid.InitPredicate(log.Logger, c, p, cfg)) {
+				assert.Equal(t,
+					tc.expected, p.Call(log.Logger))
+				if len(tc.expResults) > 0 {
+					assert.Equal(t, tc.expResults,
+						p.Result()["matches"])
+				}
 			}
 		})
 
 	}
 }
 
-func TestMatchRegexpWithRegister(t *testing.T) {
-	var self Predicate
-
-	yaml := `
-string: ABBBBCD
-regexp: A(B+.)D$
-xxx: ccc
-`
-	conf := getConf(t, yaml)
-	ctx := ctx.New()
-	if res := self.Call(ctx, conf); !res {
-		t.Errorf("Should have returned true")
-	} else {
-		if r := self.Result()["matches"].([]string); len(r) == 0 ||
-			r[1] != "BBBBC" {
-			t.Errorf("Should have match BBBBC, not %v", r)
-		}
-	}
-
-}
-
-func TestMain(m *testing.M) {
-	zerolog.SetGlobalLevel(logLevel)
-	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
-		With().Caller().Timestamp().Logger()
-	os.Exit(m.Run())
-}
-
 /***************************************************************************
   Benchmarck: compare predicates with and without templating
   ***************************************************************************/
+
 func BenchmarkNoGval(b *testing.B) {
-	var self Predicate
 	yaml := `
 string: AAAAAA
 fixed:  AAAAAA
 `
-	zerolog.SetGlobalLevel(logLevel)
-	conf := getConfB(b, yaml)
-	ctx := ctx.New()
-	for i := 0; i < b.N; i++ {
-		self.Call(ctx, conf)
-	}
+	benchmark(b, yaml)
 }
+
 func BenchmarkWithGval(b *testing.B) {
-	var self Predicate
 	yaml := `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"
 `
-	zerolog.SetGlobalLevel(logLevel)
-	conf := getConfB(b, yaml)
-	ctx := ctx.New()
-	for i := 0; i < b.N; i++ {
-		self.Call(ctx, conf)
-	}
+	benchmark(b, yaml)
+}
 
+func benchmark(b *testing.B, y string) {
+	p := New()
+	cfg := getConfB(b, y)
+	c := ctx.New()
+	zerolog.SetGlobalLevel(logLevel)
+	if assert.True(b,
+		genapid.InitPredicate(log.Logger, c, p, cfg)) {
+		for i := 0; i < b.N; i++ {
+			p.Call(log.Logger)
+		}
+	}
 }
 
 /***************************************************************************
   Helpers
   ***************************************************************************/
+
 func getConf(t *testing.T, source string) *conf.Params {
-	c := conf.Params{Name: "test"}
+	c := conf.Params{}
 	require.Nil(t,
 		yaml.Unmarshal([]byte(source), &c.Conf), "YAML parsing failed")
 	t.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
@@ -211,8 +198,10 @@ func getConf(t *testing.T, source string) *conf.Params {
 }
 
 func getConfB(b *testing.B, source string) *conf.Params {
-	c := conf.Params{Name: "bench"}
+	c := conf.Params{}
 	require.Nil(b,
-		yaml.Unmarshal([]byte(source), &c.Conf))
+		yaml.Unmarshal([]byte(source), &c.Conf), "YAML parsing failed")
+	b.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
+
 	return &c
 }
