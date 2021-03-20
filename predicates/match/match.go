@@ -44,12 +44,23 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 			log.Error().Err(err).Msg("invalid 'regexp'")
 			return false
 		}
+		// get list of matches
 		res := r.FindStringSubmatch(p.String)
 		if len(res) == 0 {
 			return false
 		}
+		// get named matches
+		namedRes := make(map[string]string)
+		for i, name := range r.SubexpNames() {
+			if i != 0 && name != "" {
+				namedRes[name] = res[i]
+			}
+		}
 		log.Debug().Msgf("'regexp' matched %v", res)
-		predicate.results = ctx.Result{"matches": res}
+		predicate.results = ctx.Result{
+			"matches": res,
+			"named":   namedRes,
+		}
 		return true
 	}
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")

@@ -25,6 +25,7 @@ func TestMatch(t *testing.T) {
 		conf       string
 		expected   bool
 		expResults []string
+		expNamed   map[string]string
 	}{
 		{
 			name:     "NoConf",
@@ -112,7 +113,19 @@ regexp: A(B+.)D$
 			expected: false,
 		},
 		{
-			name: "Templating",
+			name: "Named",
+			conf: `
+string: RRRRTTTTSSYYYY
+regexp: ^(?P<r>R+)(T+)S*(?P<y>Y+)$
+`,
+			expected: true,
+			expResults: []string{"RRRRTTTTSSYYYY",
+				"RRRR", "TTTT", "YYYY"},
+			expNamed: map[string]string{"r": "RRRR", "y": "YYYY"},
+		},
+
+		{
+			name: "GVal",
 			conf: `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"
@@ -143,7 +156,12 @@ fixed:  "value"
 					tc.expected, p.Call(log.Logger))
 				if len(tc.expResults) > 0 {
 					assert.Equal(t, tc.expResults,
-						p.Result()["matches"])
+						p.Result()["matches"], "mismatched groups")
+					if tc.expNamed != nil {
+						assert.Equal(t, tc.expNamed,
+							p.Result()["named"],
+							"mismatches named group")
+					}
 				}
 			}
 		})
