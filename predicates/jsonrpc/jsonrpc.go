@@ -35,6 +35,7 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 		log.Error().Err(errors.New("Missing parameters")).Msg("")
 		return false
 	}
+	log = log.With().Str("procedure", p.Procedure).Logger()
 	opts := jsonrpc.RPCClientOpts{}
 	if p.BasicAuth != nil {
 		log.Debug().Msg("Enabling basic auth")
