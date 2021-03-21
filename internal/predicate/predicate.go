@@ -14,11 +14,11 @@ import (
 )
 
 type pOptions struct {
-	register, name, stop string
-	p                    genapid.Predicate
-	pipe                 conf.Pipe
-	set                  []map[string]interface{}
-	def                  ctx.DefaultParams
+	register, name, result string
+	p                      genapid.Predicate
+	pipe                   conf.Pipe
+	set                    []map[string]interface{}
+	def                    ctx.DefaultParams
 }
 
 func (o pOptions) hasPredicate() bool {
@@ -36,8 +36,8 @@ func getOptions(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) (*pOptions,
 			if !assignOption(log, "register", &o.register, node) {
 				return nil, false
 			}
-		case "stop":
-			if !assignOption(log, "stop", &o.stop, node) {
+		case "result":
+			if !assignOption(log, "result", &o.result, node) {
 				return nil, false
 			}
 		case "name":
@@ -57,10 +57,8 @@ func getOptions(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) (*pOptions,
 				return nil, false
 			}
 		default:
-			// Try to check if option is a predicate
+			// Try to check if it is a predicate
 			if !assignPlugin(log, &o, k) {
-				log.Error().
-					Err(fmt.Errorf("Unknown predicate '%v'", k))
 				return nil, false
 			}
 		}
@@ -99,13 +97,19 @@ func Process(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) bool {
 				// Predicate is no supposed to use 'result' field
 				log.Warn().Msgf("Value is lost 'result':%v", val)
 			}
-			r["result"] = result
+			r["result"] = result // real predicate result, not 'result:' option
 			c.R[o.register] = r
 
 		} else {
 			// Predicate doesn't any result data, we
 			// just save its boolean evaluation
 			c.R[o.register] = ctx.Result{"result": result}
+		}
+	}
+	if o.result != "" {
+		if !conf.GetParams(c, o.result, &result) {
+			log.Error().Err(errors.New("'result' is not boolean")).Msg("")
+			return false
 		}
 	}
 	log.Debug().Bool("value", result).Msg("End predicate")
@@ -116,11 +120,6 @@ func processPredicate(log zerolog.Logger,
 	o *pOptions, cfg *conf.Predicate, c *ctx.Ctx) bool {
 	name := o.p.Name()
 	log.Debug().Msgf("Found predicate '%v'", name)
-	if o.stop != "" {
-		log.Error().Err(
-			errors.New("'stop' set on a predicate")).Msg("")
-		return false
-	}
 
 	argsNode := (*cfg)[name]
 	args := conf.Params{Name: name}
@@ -212,22 +211,24 @@ func processDefault(log zerolog.Logger, o *pOptions, c *ctx.Ctx) bool {
 
 // Find a plugin corresponding to the predicate set in the conf file
 func assignPlugin(log zerolog.Logger, o *pOptions, name string) bool {
-	if o.p != nil {
-		err := fmt.Errorf("Both '%v' & '%v' declared",
-			(o.p).Name(), name)
-		log.Error().Err(err).Msg("")
-		return false
-	}
-	if o.hasPredicate() {
-		err := fmt.Errorf("'%v' declared with another predicate",
-			name)
-		log.Error().Err(err).Msg("")
-		return false
-	}
 	if res := plugins.Get(name); res != nil {
+		if o.p != nil {
+			err := fmt.Errorf("Both '%v' & '%v' declared",
+				(o.p).Name(), name)
+			log.Error().Err(err).Msg("")
+			return false
+		}
+		if o.hasPredicate() {
+			err := fmt.Errorf("'%v' declared with another predicate",
+				name)
+			log.Error().Err(err).Msg("")
+			return false
+		}
 		o.p = res
 		return true
 	}
+	log.Error().
+		Err(fmt.Errorf("Unknown predicate '%v'", name)).Msg("")
 	return false
 }
 
@@ -259,13 +260,14 @@ func pipeHandling(log zerolog.Logger, c *ctx.Ctx, o *pOptions) bool {
 	}
 	o.pipe.Name = o.name
 	ProcessPipe(&o.pipe, c)
-	stopValue := false // Always continue after a pipe
-	if o.stop != "" {
-		if !conf.GetParams(c, o.stop, &stopValue) {
-			log.Error().Err(errors.New("'stop' is not boolean"))
+	// Always continue after a pipe, unless result: option is set
+	// and evaluate to false
+	result := true
+	if o.result != "" {
+		if !conf.GetParams(c, o.result, &result) {
+			log.Error().Err(errors.New("'result' is not boolean")).Msg("")
 			return false
 		}
 	}
-	// Always continue after a pipe, unless stop is true
-	return !stopValue
+	return result
 }

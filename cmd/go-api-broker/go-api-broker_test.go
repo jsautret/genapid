@@ -16,11 +16,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.FatalLevel
+var logLevel = zerolog.InfoLevel
 
-var checkLog = true
+var checkLog = false
 
 func TestFullConf(t *testing.T) {
+	type expLog []map[string]string
 	tt := []struct {
 		name        string
 		method      string
@@ -30,8 +31,8 @@ func TestFullConf(t *testing.T) {
 		want        string
 		statusCode  int
 		conf        string
-		logFound    string
-		logNotFound string
+		logFound    expLog
+		logNotFound expLog
 	}{
 		{
 			name:       "EmptyConf",
@@ -45,7 +46,7 @@ func TestFullConf(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
-			logFound:   "EndPipeOfMatch",
+			logFound:   expLog{{"log": "EndPipeOfMatch"}},
 			conf: `
 - name: "Test PipeOfMatch"
   pipe:
@@ -73,7 +74,7 @@ func TestFullConf(t *testing.T) {
 			statusCode: http.StatusOK,
 			mime:       "application/json; charset=utf-8",
 			body:       `{"bodyName": "bodyValue"}`,
-			logFound:   "EndIncomingHttpMatching",
+			logFound:   expLog{{"log": "EndIncomingHttpMatching"}},
 			conf: `
 - name: "Test IncomingHttpMatching"
   pipe:
@@ -101,7 +102,7 @@ func TestFullConf(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
-			logFound:   "EndDefaultFields",
+			logFound:   expLog{{"log": "EndDefaultFields"}},
 			conf: `
 - name: "Test DefaultFields"
   pipe:
@@ -133,7 +134,7 @@ func TestFullConf(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/ImbricatedPipes",
 			statusCode: http.StatusOK,
-			logFound:   "EndImbricatedPipes",
+			logFound:   expLog{{"log": "EndImbricatedPipes"}},
 			conf: `
 - name: "Test ImbricatedPipes"
   pipe:
@@ -156,14 +157,35 @@ func TestFullConf(t *testing.T) {
 `,
 		},
 		{
-			name:        "Stop",
+			name:       "InvalidPredicate",
+			method:     http.MethodGet,
+			path:       "/InvalidPredicate",
+			statusCode: http.StatusNotFound,
+			logFound: expLog{
+				{"log": "start"},
+				{"error": "Unknown predicate 'invalid'"},
+			},
+			logNotFound: expLog{{"log": "NotExecuted"}},
+			conf: `
+- name: "InvalidPredicate"
+  pipe:
+  - log:
+      msg: start
+  - invalid:
+      key: value
+  - log: # will not be evaluated
+      msg: NotExecuted
+`,
+		},
+		{
+			name:        "StopPipe",
 			method:      http.MethodGet,
 			path:        "/Stop",
 			statusCode:  http.StatusNotFound,
-			logFound:    "endPipe",
-			logNotFound: "NotExecuted",
+			logFound:    expLog{{"log": "endPipe"}},
+			logNotFound: expLog{{"log": "NotExecuted"}},
 			conf: `
-- name: "Stop"
+- name: "StopPipe"
   pipe:
   - default:
       match:
@@ -175,13 +197,17 @@ func TestFullConf(t *testing.T) {
         fixed: stop
     - log:
         msg: endPipe
-    stop: =true
+    result: =false
   - log: # will not be evaluated
       msg: NotExecuted
 `,
 		},
 	}
 	for _, tc := range tt {
+		zerolog.SetGlobalLevel(logLevel)
+		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+			With().Caller().Timestamp().Logger()
+
 		t.Run(tc.name, func(t *testing.T) {
 			var tst *zltest.Tester
 			if checkLog {
@@ -204,12 +230,15 @@ func TestFullConf(t *testing.T) {
 			handler(responseRecorder, request)
 
 			if checkLog {
-				if tc.logFound != "" {
-					tst.Entries().ExpStr("log", tc.logFound)
+				for _, l := range tc.logFound {
+					for k, v := range l {
+						tst.Entries().ExpStr(k, v)
+					}
 				}
-				if tc.logNotFound != "" {
-					tst.Entries().NotExpStr("log",
-						tc.logNotFound)
+				for _, l := range tc.logNotFound {
+					for k, v := range l {
+						tst.Entries().NotExpStr(k, v)
+					}
 				}
 			}
 			if responseRecorder.Code != tc.statusCode {
@@ -223,17 +252,6 @@ func TestFullConf(t *testing.T) {
 			}
 		})
 	}
-}
-
-// TODO: test log content with https://github.com/rzajac/zltest
-
-func TestMain(m *testing.M) {
-	zerolog.SetGlobalLevel(logLevel)
-	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
-		With().Caller().Timestamp().Logger()
-	//log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-
-	os.Exit(m.Run())
 }
 
 /***************************************************************************

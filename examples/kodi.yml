@@ -1,6 +1,5 @@
-
 - name: "IFTTT"
-  pipe: # Validate that it's an incoming IFTTT request  
+  pipe: # Validate that it's an incoming IFTTT request
   - match: # run only on IFTTT dedicated endpoint
       string: =In.Req.URL.Path
       fixed: /ifttt
@@ -31,26 +30,29 @@
         procedure: Application.SetMute
         params:
           mute: toggle
-    # Stop here if the phrase was matched
-    stop: = R.mute.result
+    result: "= !R.mute.result" # Stop here if the phrase was matched
+
 
   - name: "Play episode"
     pipe:
     - match:    # Match a phrase asking to play a episode
         regexp: "^(?i)(démarre|lance|joue|mets)( un)? épisode( de)? (?P<title>.+)$"
       register: tvshow
+
     - jsonrpc:  # Get the list of all available tvshows
         procedure: VideoLibrary.GetTVShows
       register: tvshows
-    - set:      # Get the tvshoid ID using a fuzzy search on all titles
+
+    - set:      # Get the tvshoid using a fuzzy search on all tvshows titles
         - titles:  '= R.tvshows.response | $.tvshows[*].label'
         - title:   '= fuzzy(R.tvshow.named.title, V.titles)'
         - tvshowid: '= jsonpath(`$.tvshows[?(@.label=="`+V.title+`")].tvshowid`, R.tvshows.response)'
-    - jsonrpc:  # Get the list of all episodes
+
+    - jsonrpc:  # Get the list of all episodes for that tvshow
         procedure: VideoLibrary.GetEpisodes
         params:
-          tvshowid: = V.tvshowid[0]
-          sort:    # Sorted by episode number
+          tvshowid: =V.tvshowid[0]
+          sort: # Sorted by episode number
             order: ascending
             method: episode
             ignorearticle: true
@@ -58,37 +60,41 @@
             - playcount # need playcount to filter out watched episode
             - episode
       register: episodes
+
     - set:      # Get a list of only unwatched episodes
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
     - log:      # Log the tvshow that will be played
         msg: '="Playing "+V.title+" episode "+V.unwatched_label[0]'
+
     - jsonrpc:
         procedure: Player.Open
         params:
           item: # Play the first unwatched episode
             episodeid:  = V.unwatched[0]
-    stop: = R.tvshow.result # Stop here if the phrase was matched
+    result: '=!R.tvshow.result' # Stop here if the phrase was matched
+
 
   - name: "Play movie"
     pipe:
     - match:    # Match a phrase asking to play a movie
         regexp: "^(?i)(démarre|lance|joue|mets) (P<title>.+)$"
       register: movie
+
     - jsonrpc:  # Get the list of all available movies
         procedure: VideoLibrary.GetMovies
       register: movies
+
     - set:      # Get the movie ID using a fuzzy search on all titles
         - titles:  '= R.movies.response | $.movies[*].label'
         - title:   '= fuzzy(R.movie.named.title, V.titles)'
         - movieid: '= jsonpath(`$.movies[?(@.label=="`+V.title+`")].movieid`, R.movies.response)'
     - log:      # Log the movie that will be played
         msg: '="Playing "+V.title+", id: "+V.movieid[0]'
+
     - jsonrpc:  # Play the movie
         procedure: Player.Open
         params:
           item:
             movieid: "=V.movieid[0]"
-    stop: = R.movie.result # Stop here if the phrase was matched            
-
-
+    result: "=!R.movie.result" # Stop here if the phrase was matched
