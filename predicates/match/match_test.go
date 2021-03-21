@@ -17,8 +17,6 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.TraceLevel
-
 func TestMatch(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -189,16 +187,16 @@ fixed:  "WWWWAA"
 	benchmark(b, yaml)
 }
 
-func benchmark(b *testing.B, y string) {
+func benchmark(b *testing.B, yaml string) {
 	p := New()
-	cfg := getConfB(b, y)
+	cfg := getConfB(b, yaml)
 	c := ctx.New()
 	zerolog.SetGlobalLevel(logLevel)
-	if assert.True(b,
-		genapid.InitPredicate(log.Logger, c, p, cfg)) {
-		for i := 0; i < b.N; i++ {
-			p.Call(log.Logger)
-		}
+	for i := 0; i < b.N; i++ {
+		require.True(b,
+			genapid.InitPredicate(log.Logger, c, p, cfg))
+		p.Call(log.Logger)
+
 	}
 }
 
@@ -219,7 +217,5 @@ func getConfB(b *testing.B, source string) *conf.Params {
 	c := conf.Params{}
 	require.Nil(b,
 		yaml.Unmarshal([]byte(source), &c.Conf), "YAML parsing failed")
-	b.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
-
 	return &c
 }
