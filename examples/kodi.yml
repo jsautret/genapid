@@ -43,10 +43,10 @@
         procedure: VideoLibrary.GetTVShows
       register: tvshows
 
-    - set:      # Get the tvshoid using a fuzzy search on all tvshows titles
+    - set:      # Get the tvshowid using a fuzzy search on all tvshows titles
         - titles:  '= R.tvshows.response | $.tvshows[*].label'
         - title:   '= fuzzy(R.tvshow.named.title, V.titles)'
-        - tvshowid: '= jsonpath(`$.tvshows[?(@.label=="`+V.title+`")].tvshowid`, R.tvshows.response)'
+        - tvshowid: '= jsonpath(format(`$.tvshows[?(@.label=="%s")].tvshowid`, V.title), R.tvshows.response)'
 
     - jsonrpc:  # Get the list of all episodes for that tvshow
         procedure: VideoLibrary.GetEpisodes
@@ -65,7 +65,7 @@
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
     - log:      # Log the tvshow that will be played
-        msg: '="Playing "+V.title+" episode "+V.unwatched_label[0]'
+        msg: '=format("Playing %v episode %v", V.title, V.unwatched_label[0])'
 
     - jsonrpc:
         procedure: Player.Open
@@ -78,7 +78,7 @@
   - name: "Play movie"
     pipe:
     - match:    # Match a phrase asking to play a movie
-        regexp: "^(?i)(démarre|lance|joue|mets) (P<title>.+)$"
+        regexp: "^(?i)(démarre|lance|joue|mets) (?P<title>.+)$"
       register: movie
 
     - jsonrpc:  # Get the list of all available movies
@@ -88,9 +88,9 @@
     - set:      # Get the movie ID using a fuzzy search on all titles
         - titles:  '= R.movies.response | $.movies[*].label'
         - title:   '= fuzzy(R.movie.named.title, V.titles)'
-        - movieid: '= jsonpath(`$.movies[?(@.label=="`+V.title+`")].movieid`, R.movies.response)'
+        - movieid: '= jsonpath(format(`$.movies[?(@.label=="%s")].movieid`, V.title), R.movies.response)'
     - log:      # Log the movie that will be played
-        msg: '="Playing "+V.title+", id: "+V.movieid[0]'
+        msg: '=format("Playing %v, id: %v", V.title, V.movieid[0])'
 
     - jsonrpc:  # Play the movie
         procedure: Player.Open

@@ -129,6 +129,15 @@ s1: '=fuzzy("whl", V.fuzzy)'
 			},
 		},
 		{
+			name: "Format",
+			conf: `
+s1: '=format("%s%v", "Result", 42)'
+`,
+			expected: params{
+				S1: "Result42",
+			},
+		},
+		{
 			name: "Number",
 			conf: `
 i: '=40+2'
