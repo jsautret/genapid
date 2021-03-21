@@ -16,9 +16,9 @@ var Name = "match"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		String string
-		Fixed  string
-		Regexp string
+		String string `validate:"required"`
+		Fixed  string `validate:"required_without=Regexp"`
+		Regexp string `validate:"required_without=Fixed"`
 	}
 	results ctx.Result // result of regexp match
 }
@@ -26,11 +26,6 @@ type Predicate struct {
 // Call evaluate the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
-	if p.String == "" {
-		log.Error().Err(errors.New("'string' is missing or empty")).
-			Msg("")
-		return false
-	}
 	log.Debug().Str("string", p.String).Msg("")
 	if p.Fixed != "" {
 		log.Debug().Str("fixed", p.Fixed).Msg("")
@@ -63,6 +58,7 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 		}
 		return true
 	}
+	// validate should prevent reaching this point
 	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
 	return false
 }
@@ -79,8 +75,7 @@ func (predicate *Predicate) Name() string {
 	return predicate.name
 }
 
-// Params returns a reference to an empty struct describing the
-// params accepted by the predicate
+// Params returns a reference to the params struct of the predicate
 func (predicate *Predicate) Params() interface{} {
 	return &predicate.params
 }

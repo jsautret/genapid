@@ -43,6 +43,7 @@ func TestPredicate(t *testing.T) {
 				"key": "value",
 			},
 			conf: `
+name: keyValue
 test1:
   key: value
 `,

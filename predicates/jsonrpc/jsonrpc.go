@@ -2,7 +2,6 @@ package jsonrpcpredicate
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 
 	"github.com/jsautret/go-api-broker/ctx"
@@ -14,12 +13,12 @@ import (
 // Name of the predicate
 var Name = "jsonrpc"
 
-// Predicate is the conf.Plugin interface that describes the predicate
+// Predicate is a genapid.Predicate interface that describes the predicate
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		URL       string
-		Procedure string
+		URL       string      `validate:"required,url"`
+		Procedure string      `validate:"required"`
 		Params    interface{} `mapstructure:",omitempty"`
 		BasicAuth *basicAuth  `mapstructure:"basic_auth,omitempty"`
 	}
@@ -31,10 +30,6 @@ type basicAuth struct{ Username, Password string }
 // Call evaluate the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
-	if p.URL == "" || p.Procedure == "" {
-		log.Error().Err(errors.New("Missing parameters")).Msg("")
-		return false
-	}
 	log = log.With().Str("procedure", p.Procedure).Logger()
 	opts := jsonrpc.RPCClientOpts{}
 	if p.BasicAuth != nil {
@@ -92,8 +87,7 @@ func (predicate *Predicate) Name() string {
 	return predicate.name
 }
 
-// Params returns a reference to an empty struct describing the
-// params accepted by the predicate
+// Params returns a reference to a struct params accepted by the predicate
 func (predicate *Predicate) Params() interface{} {
 	return &predicate.params
 }

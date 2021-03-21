@@ -8,12 +8,14 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/PaesslerAG/gval v1.1.0
 	github.com/PaesslerAG/jsonpath v0.1.1
+	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-test/deep v1.0.7
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jsautret/zltest v0.3.0
 	github.com/kr/pretty v0.1.0
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lithammer/fuzzysearch v1.1.1
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1

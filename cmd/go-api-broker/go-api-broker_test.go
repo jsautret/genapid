@@ -18,7 +18,7 @@ import (
 
 var logLevel = zerolog.InfoLevel
 
-var checkLog = false
+var checkLog = true
 
 func TestFullConf(t *testing.T) {
 	type expLog []map[string]string

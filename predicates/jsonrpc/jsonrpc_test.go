@@ -23,8 +23,6 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-//var logLevel = zerolog.DebugLevel
-
 var (
 	username = "user1"
 	password = "pass1"
@@ -37,14 +35,16 @@ func TestJsonrpc(t *testing.T) {
 	defer server.Close()
 
 	cases := []struct {
-		name     string
-		conf     string
-		expected bool
+		name         string
+		conf         string
+		expected     bool
+		invalidParam bool // true if params values are invalid
+
 	}{
 		{
-			name:     "NoConf",
-			conf:     "",
-			expected: false,
+			name:         "NoConf",
+			conf:         "",
+			invalidParam: true,
 		},
 		{
 			name: "EmptyResponse",
@@ -126,8 +126,9 @@ basic_auth:
 			p := New()
 			cfg := getConf(t, tc.conf)
 			c := ctx.New()
-			if assert.True(t,
-				genapid.InitPredicate(log.Logger, c, p, cfg)) {
+			init := genapid.InitPredicate(log.Logger, c, p, cfg)
+			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
+			if init {
 				assert.Equal(t,
 					tc.expected, p.Call(log.Logger))
 			}

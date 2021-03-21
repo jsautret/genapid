@@ -15,7 +15,7 @@ var Name = "log"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		Msg interface{}
+		Msg interface{} `validate:"required"`
 	}
 }
 
@@ -39,8 +39,7 @@ func (predicate *Predicate) Name() string {
 	return predicate.name
 }
 
-// Params returns a reference to an empty struct describing the
-// params accepted by the predicate
+// Params returns a reference to the params struct of the predicate
 func (predicate *Predicate) Params() interface{} {
 	return &predicate.params
 }

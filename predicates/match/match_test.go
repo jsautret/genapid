@@ -19,30 +19,31 @@ var logLevel = zerolog.FatalLevel
 
 func TestMatch(t *testing.T) {
 	cases := []struct {
-		name       string
-		conf       string
-		expected   bool
-		expResults []string
-		expNamed   map[string]string
+		name         string            // Test name
+		conf         string            // YAML input
+		expResult    bool              // predicate result
+		invalidParam bool              // Params values are invalid
+		expResults   []string          // regexp matches
+		expNamed     map[string]string // regexp named groups
 	}{
 		{
-			name:     "NoConf",
-			conf:     "",
-			expected: false,
+			name:         "NoConf",
+			conf:         "",
+			invalidParam: true,
 		},
 		{
-			name: "NoString",
+			name:         "NoString",
+			invalidParam: true,
 			conf: `
 fixed: ABCD
 `,
-			expected: false,
 		},
 		{
 			name: "OnlyString",
 			conf: `
 string: ABCD
 `,
-			expected: false,
+			invalidParam: true,
 		},
 		{
 			name: "FixedMatched",
@@ -50,7 +51,7 @@ string: ABCD
 string: "ABCD"
 fixed: ABCD
 `,
-			expected: true,
+			expResult: true,
 		},
 		{
 			name: "FixedNotMatched",
@@ -58,7 +59,7 @@ fixed: ABCD
 string: "ABCDE"
 fixed: ABCD
 `,
-			expected: false,
+			expResult: false,
 		},
 		{
 			name: "EmptyFixed",
@@ -66,7 +67,7 @@ fixed: ABCD
 string: ""
 fixed: ""
 `,
-			expected: false,
+			invalidParam: true,
 		},
 		{
 			name: "FixedAndRegexp",
@@ -75,7 +76,7 @@ string: "AAA"
 fixed: "AAA"
 regexp: "XXX"
 `,
-			expected: true,
+			expResult: true,
 		},
 		{
 			name: "EmptyRegexp",
@@ -83,7 +84,7 @@ regexp: "XXX"
 string: ""
 regexp: ""
 `,
-			expected: false,
+			invalidParam: true,
 		},
 		{
 			name: "BadRegexp",
@@ -91,7 +92,7 @@ regexp: ""
 string: "AAAAA"
 regexp: "AA(AA"
 `,
-			expected: false,
+			expResult: false,
 		},
 		{
 			name: "RegexpMatched",
@@ -99,7 +100,7 @@ regexp: "AA(AA"
 string: ABBBBCD
 regexp: A(B+.)D$
 `,
-			expected:   true,
+			expResult:  true,
 			expResults: []string{"ABBBBCD", "BBBBC"},
 		},
 		{
@@ -108,7 +109,7 @@ regexp: A(B+.)D$
 string: ABBBBCDE
 regexp: A(B+.)D$
 `,
-			expected: false,
+			expResult: false,
 		},
 		{
 			name: "Named",
@@ -116,7 +117,7 @@ regexp: A(B+.)D$
 string: RRRRTTTTSSYYYY
 regexp: ^(?P<r>R+)(T+)S*(?P<y>Y+)$
 `,
-			expected: true,
+			expResult: true,
 			expResults: []string{"RRRRTTTTSSYYYY",
 				"RRRR", "TTTT", "YYYY"},
 			expNamed: map[string]string{"r": "RRRR", "y": "YYYY"},
@@ -128,7 +129,7 @@ regexp: ^(?P<r>R+)(T+)S*(?P<y>Y+)$
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
 fixed:  "WWWWAA"
 `,
-			expected: true,
+			expResult: true,
 		},
 		{
 			name: "jsonpath",
@@ -136,7 +137,7 @@ fixed:  "WWWWAA"
 string: '= {"name": "value"}| $.name'
 fixed:  "value"
 `,
-			expected: true,
+			expResult: true,
 		},
 	}
 
@@ -148,10 +149,11 @@ fixed:  "value"
 			p := New()
 			cfg := getConf(t, tc.conf)
 			c := ctx.New()
-			if assert.True(t,
-				genapid.InitPredicate(log.Logger, c, p, cfg)) {
+			init := genapid.InitPredicate(log.Logger, c, p, cfg)
+			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
+			if init {
 				assert.Equal(t,
-					tc.expected, p.Call(log.Logger))
+					tc.expResult, p.Call(log.Logger))
 				if len(tc.expResults) > 0 {
 					assert.Equal(t, tc.expResults,
 						p.Result()["matches"], "mismatched groups")
