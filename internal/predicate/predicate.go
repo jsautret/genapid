@@ -11,119 +11,133 @@ import (
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/jsautret/go-api-broker/internal/plugins"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-// Process evaluate a predicate or a pipe from from conf file and
-// current context
-func Process(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) bool {
-	var register, name, stop string
-	var p genapid.Predicate
-	var pipe conf.Pipe
-	cmd := false
-	// Read all options and predicate name or pipe
+type pOptions struct {
+	register, name, stop string
+	p                    genapid.Predicate
+	pipe                 conf.Pipe
+	set                  []map[string]interface{}
+	def                  ctx.DefaultParams
+}
+
+func (o pOptions) hasPredicate() bool {
+	return o.p != nil || o.pipe.Pipe != nil ||
+		len(o.set) != 0 || len(o.def) != 0
+}
+
+// Read all options and predicate or pipe
+func getOptions(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) (*pOptions, bool) {
+	var o pOptions
 	for k, node := range *cfg {
 		log.Trace().Str("key", k).Msgf("Found Key %v for predicate", k)
 		switch k {
 		case "register":
-			if !assignOption("register", &register, node) {
-				return false
+			if !assignOption(log, "register", &o.register, node) {
+				return nil, false
 			}
 		case "stop":
-			if !assignOption("stop", &stop, node) {
-				return false
+			if !assignOption(log, "stop", &o.stop, node) {
+				return nil, false
 			}
 		case "name":
-			if !assignOption("name", &name, node) {
-				return false
+			if !assignOption(log, "name", &o.name, node) {
+				return nil, false
 			}
 		case "set":
-			if !processSet(c, node, cmd) {
-				return false
+			if !assignSet(log, &o, node) {
+				return nil, false
 			}
-			cmd = true
 		case "default":
-			if !processDefault(c, node, cmd) {
-				return false
+			if !assignDefault(log, &o, node) {
+				return nil, false
 			}
-			cmd = true
 		case "pipe":
-			if !assignPipe(&pipe, node, cmd) {
-				return false
+			if !assignPipe(log, &o, node) {
+				return nil, false
 			}
 		default:
 			// Try to check if option is a predicate
-			assignPlugin(&p, k)
-			if p == nil {
+			if !assignPlugin(log, &o, k) {
 				log.Error().
 					Err(fmt.Errorf("Unknown predicate '%v'", k))
-				return false
+				return nil, false
 			}
 		}
 	}
-	if p != nil && cmd {
-		log.Error().Err(fmt.Errorf("Cannot use '%v' and a command",
-			p.Name())).Msg("")
+	return &o, true
+}
+
+// Process evaluate a predicate or a pipe from from conf file and
+// current context
+func Process(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) bool {
+	o, ok := getOptions(log, cfg, c)
+	if !ok {
 		return false
 	}
-	if cmd && pipe.Pipe != nil {
-		log.Error().
-			Err(errors.New("Cannot use 'pipe' and a command")).Msg("")
-		return false
+	if len(o.set) > 0 {
+		return processSet(log, o, c)
 	}
-	if cmd { // a command was executed
-		return true
+	if len(o.def) > 0 {
+		return processDefault(log, o, c)
 	}
-	if pipe.Pipe != nil {
-		return pipeHandling(log, c, pipe, name, register, stop)
+	if o.pipe.Pipe != nil {
+		return pipeHandling(log, c, o)
 	}
-	if p == nil {
+	if o.p == nil {
 		log.Error().Err(errors.New("No predicate found")).Msg("")
 		return false
 	}
-	log = log.With().Str("predicate", p.Name()).Logger()
-	log.Debug().Msgf("Found predicate '%v'", p.Name())
-	if stop != "" {
-		log.Error().Err(
-			errors.New("'stop' set on a predicate")).Msg("")
-		return false
-	}
+	log = log.With().Str("predicate", o.p.Name()).Str("name", o.name).Logger()
+	result := processPredicate(log, o, cfg, c)
 
-	argsNode := (*cfg)[p.Name()]
-	args := conf.Params{Name: p.Name()}
-	if err := argsNode.Decode(&(args.Conf)); err != nil {
-		log.Error().Err(err).Msg("Parameters must be a dict")
-		return false
-	}
-	if !genapid.InitPredicate(log, c, p, &args) {
-		return false
-	}
-
-	// Evaluate predicate
-	result := p.Call(log)
-
-	if register != "" { // Save predicate results
-		log := log.With().Str("register", register).Logger()
-		log.Debug().Msgf("Register result to %v", register)
-		if r := p.Result(); r != nil {
+	if o.register != "" { // Save predicate results
+		log := log.With().Str("register", o.register).Logger()
+		log.Debug().Msgf("Register result to %v", o.register)
+		if r := o.p.Result(); r != nil {
 			if val, ok := r["result"]; ok {
 				// Predicate is no supposed to use 'result' field
 				log.Warn().Msgf("Value is lost 'result':%v", val)
 			}
 			r["result"] = result
-			c.R[register] = r
+			c.R[o.register] = r
+
 		} else {
 			// Predicate doesn't any result data, we
 			// just save its boolean evaluation
-			c.R[register] = ctx.Result{"result": result}
+			c.R[o.register] = ctx.Result{"result": result}
 		}
 	}
 	log.Debug().Bool("value", result).Msg("End predicate")
 	return result
 }
 
+func processPredicate(log zerolog.Logger,
+	o *pOptions, cfg *conf.Predicate, c *ctx.Ctx) bool {
+	name := o.p.Name()
+	log.Debug().Msgf("Found predicate '%v'", name)
+	if o.stop != "" {
+		log.Error().Err(
+			errors.New("'stop' set on a predicate")).Msg("")
+		return false
+	}
+
+	argsNode := (*cfg)[name]
+	args := conf.Params{Name: name}
+	if err := argsNode.Decode(&(args.Conf)); err != nil {
+		log.Error().Err(err).Msgf("Parameters for %v must be a dict", name)
+		return false
+	}
+	if !genapid.InitPredicate(log, c, o.p, &args) {
+		return false
+	}
+
+	// Evaluate predicate
+	return o.p.Call(log)
+}
+
 // Decode & store an option
-func assignOption(name string, option *string, n yaml.Node) bool {
+func assignOption(log zerolog.Logger, name string, option *string, n yaml.Node) bool {
 	if *option != "" {
 		log.Error().Msgf("Several '%v' declared", name)
 		return false
@@ -135,25 +149,14 @@ func assignOption(name string, option *string, n yaml.Node) bool {
 	return true
 }
 
-// Store variable values set by 'set' option
-func processDefault(c *ctx.Ctx, n yaml.Node, cmd bool) bool {
-	if cmd {
-		log.Error().Msg("Cannot use 'default' with another command")
+func assignSet(log zerolog.Logger, o *pOptions, n yaml.Node) bool {
+	log = log.With().Str("predicate", "set").Logger()
+	if o.set != nil {
+		log.Error().Err(errors.New("Several 'set' declared")).Msg("")
 		return false
 	}
-	d := ctx.DefaultParams{}
-	if err := n.Decode(&d); err != nil {
-		log.Error().Err(err).Msg("'default' parameters must be a dict")
-		return false
-	}
-	conf.AddDefault(c, &d)
-	return true
-}
-
-// Store variable values set by 'set' option
-func processSet(c *ctx.Ctx, n yaml.Node, cmd bool) bool {
-	if cmd {
-		log.Error().Msg("Cannot use 'set' with another command")
+	if o.hasPredicate() {
+		log.Error().Err(errors.New("'set' declared with another predicate")).Msg("")
 		return false
 	}
 	var args []map[string]interface{}
@@ -161,11 +164,18 @@ func processSet(c *ctx.Ctx, n yaml.Node, cmd bool) bool {
 		log.Error().Err(err).Msg("'set' parameters must be a dict")
 		return false
 	}
-	for i := 0; i < len(args); i++ {
-		for k := range args[i] {
+	o.set = args
+	return true
+}
+
+// Store variable values set by 'set' option
+func processSet(log zerolog.Logger, o *pOptions, c *ctx.Ctx) bool {
+	log = log.With().Str("predicate", "set").Logger()
+	for i := 0; i < len(o.set); i++ {
+		for k := range o.set[i] {
 			var field map[string]interface{}
 			arg := make(map[string]interface{})
-			arg[k] = args[i][k]
+			arg[k] = o.set[i][k]
 			if !conf.GetParams(c, arg, &field) {
 				log.Error().
 					Err(fmt.Errorf("Invalid value for %v", k)).
@@ -179,28 +189,55 @@ func processSet(c *ctx.Ctx, n yaml.Node, cmd bool) bool {
 	return true
 }
 
-// Find a plugin corresponding to the predicate set in the conf file
-// and set plugin & pluginName parameters accordingly
-func assignPlugin(p *genapid.Predicate, name string) {
-	if *p != nil {
-		err := fmt.Errorf("Found both '%v' & '%v', "+
-			"ignoring the later",
-			(*p).Name(), name)
-		log.Error().Err(err).Msg("")
-		return
-	}
-	if res := plugins.Get(name); res != nil {
-		*p = res
-	}
-}
-
-func assignPipe(pipe *conf.Pipe, n yaml.Node, cmd bool) bool {
-	if cmd {
-		log.Error().Msg("Cannot use 'pipe' with another command")
+// Store variable values set by 'default' option
+func assignDefault(log zerolog.Logger, o *pOptions, n yaml.Node) bool {
+	log = log.With().Str("predicate", "default").Logger()
+	if o.hasPredicate() {
+		log.Error().Err(errors.New("'default' declared with another predicate")).Msg("")
 		return false
 	}
-	if pipe.Pipe != nil {
+	d := ctx.DefaultParams{}
+	if err := n.Decode(&d); err != nil {
+		log.Error().Err(err).Msg("'default' parameters must be a dict")
+		return false
+	}
+	o.def = d
+	return true
+}
+
+func processDefault(log zerolog.Logger, o *pOptions, c *ctx.Ctx) bool {
+	log = log.With().Str("predicate", "default").Logger()
+	return conf.AddDefault(log, c, &o.def)
+}
+
+// Find a plugin corresponding to the predicate set in the conf file
+func assignPlugin(log zerolog.Logger, o *pOptions, name string) bool {
+	if o.p != nil {
+		err := fmt.Errorf("Both '%v' & '%v' declared",
+			(o.p).Name(), name)
+		log.Error().Err(err).Msg("")
+		return false
+	}
+	if o.hasPredicate() {
+		err := fmt.Errorf("'%v' declared with another predicate",
+			name)
+		log.Error().Err(err).Msg("")
+		return false
+	}
+	if res := plugins.Get(name); res != nil {
+		o.p = res
+		return true
+	}
+	return false
+}
+
+func assignPipe(log zerolog.Logger, o *pOptions, n yaml.Node) bool {
+	if o.pipe.Pipe != nil {
 		log.Error().Msg("Several 'pipe' declared")
+		return false
+	}
+	if o.hasPredicate() {
+		log.Error().Msg("'pipe' declared with another predicate")
 		return false
 	}
 	p := []conf.Predicate{}
@@ -208,25 +245,25 @@ func assignPipe(pipe *conf.Pipe, n yaml.Node, cmd bool) bool {
 		log.Error().Err(err).Msg("invalid 'pipe'")
 		return false
 	}
-	pipe.Pipe = p
+	o.pipe.Pipe = p
 	return true
 }
 
-func pipeHandling(log zerolog.Logger, c *ctx.Ctx,
-	pipe conf.Pipe, name, register, stop string) bool {
-	log.With().Str("pipe", name).Logger()
-	if register != "" {
+func pipeHandling(log zerolog.Logger, c *ctx.Ctx, o *pOptions) bool {
+	log = log.With().Str("pipe", o.name).Logger()
+	if o.register != "" {
 		log.Error().Err(
 			errors.New("Cannot set 'register' option on a " +
 				" predicate")).Msg("")
 		return false
 	}
-	pipe.Name = name
-	ProcessPipe(&pipe, c)
+	o.pipe.Name = o.name
+	ProcessPipe(&o.pipe, c)
 	stopValue := false // Always continue after a pipe
-	if stop != "" {
-		if !conf.GetParams(c, stop, &stopValue) {
-			log.Warn().Err(errors.New("'stop' is not boolean"))
+	if o.stop != "" {
+		if !conf.GetParams(c, o.stop, &stopValue) {
+			log.Error().Err(errors.New("'stop' is not boolean"))
+			return false
 		}
 	}
 	// Always continue after a pipe, unless stop is true

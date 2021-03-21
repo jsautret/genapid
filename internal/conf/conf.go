@@ -8,6 +8,7 @@ import (
 
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/mitchellh/mapstructure"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -46,7 +47,7 @@ func Read(filename string) Root {
 }
 
 // AddDefault adds predicate default parameters to context
-func AddDefault(c *ctx.Ctx, defaultConf *ctx.DefaultParams) {
+func AddDefault(log zerolog.Logger, c *ctx.Ctx, defaultConf *ctx.DefaultParams) bool {
 	log.Debug().Interface("default", defaultConf).Msg("Setting default fields")
 	// for each predicate
 	for predicate, value := range *defaultConf {
@@ -60,10 +61,12 @@ func AddDefault(c *ctx.Ctx, defaultConf *ctx.DefaultParams) {
 			log.Error().
 				Err(errors.New("Invalid 'default' value")).
 				Str("predicate", predicate).Msg("")
+			return false
 		}
 		log.Trace().Interface("default", c.Default[predicate]).
 			Str("predicate", predicate).Msg("'default'")
 	}
+	return true
 }
 
 // GetPredicateParams from default and from the conf, with Gval

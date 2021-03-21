@@ -18,9 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.ErrorLevel
-
-//var logLevel = zerolog.TraceLevel
+var logLevel = zerolog.FatalLevel
 
 type testData struct {
 	name            string
@@ -28,6 +26,7 @@ type testData struct {
 	expPredicate    string
 	expResult       bool
 	expVars         ctx.Variables
+	expDef          ctx.Default
 	expConf         map[string]interface{}
 	expRegister     string
 	expRegisterData ctx.Result
@@ -70,8 +69,9 @@ test2:
 `,
 		},
 		{
-			name:      "set",
-			expResult: true,
+			name:         "set",
+			expPredicate: "test_set",
+			expResult:    true,
 			expVars: ctx.Variables{
 				"v1": "val1",
 				"v2": "val2",
@@ -83,7 +83,7 @@ set:
 `,
 		},
 		{
-			name:         "set + predicate",
+			name:         "setAndPredicate",
 			expPredicate: "test_set",
 			expResult:    false,
 			conf: `
@@ -95,8 +95,43 @@ set:
 `,
 		},
 		{
-			name:         "default + predicate",
-			expPredicate: "default",
+			name:         "setAndDefault",
+			expPredicate: "test_set",
+			expResult:    false,
+			conf: `
+default:
+  key: value
+set:
+  - v1: val1
+  - v2: val2
+`,
+		},
+		{
+			name:         "defaultAndSet",
+			expPredicate: "test_set",
+			expResult:    false,
+			conf: `
+set:
+  - v1: val1
+  - v2: val2
+default:
+  key: value
+`,
+		},
+		{
+			name:         "default",
+			expPredicate: "test_set",
+			expDef:       ctx.Default{"test_default": ctx.DefaultParams{"key": "value"}},
+			expResult:    true,
+			conf: `
+default:
+  test_default:
+    key: value
+`,
+		},
+		{
+			name:         "defaultAndPredicate",
+			expPredicate: "test_default",
 			expResult:    false,
 			conf: `
 test_default:
@@ -136,57 +171,63 @@ register: empty
 `,
 		},
 	}
+
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
 	for _, tc := range tt {
-		zerolog.SetGlobalLevel(logLevel)
-		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
-			With().Caller().Timestamp().Logger()
+		t.Run(tc.name, func(t *testing.T) {
 
-		p := mocks.Predicate{}
+			p := mocks.Predicate{}
 
-		// Init context & create conf
-		c := ctx.New()
-		cfg := getConf(t, tc.conf)
+			// Init context & create conf
+			c := ctx.New()
+			cfg := getConf(t, tc.conf)
 
-		p.On("Name").Return(tc.expPredicate)
-		// Register plugin
-		plugins.Add(p.Name(), func() genapid.Predicate { return &p })
+			p.On("Name").Return(tc.expPredicate)
+			// Register plugin
+			plugins.Add(p.Name(), func() genapid.Predicate { return &p })
 
-		p.On("Call", mock.Anything).Return(true)
-		parsedConf := map[string]interface{}{}
-		p.On("Params").Return(&parsedConf)
-		if tc.expRegister != "" {
-			p.On("Result").Return(tc.expRegisterData)
-		}
-
-		// Evaluate
-		res := Process(log.Logger, cfg, c)
-		// Check boolean result
-		assert.Equal(t, tc.expResult, res, "Wrong return for test "+tc.name)
-		if res {
-			if tc.expVars != nil {
-				// Check variables set by predicate
-				assert.Equal(t, tc.expVars, c.V, "Variables mismatch")
-			} else {
-				// Check params received by predicate
-				assert.Equal(t, tc.expConf, parsedConf)
-				if tc.expRegister != "" {
-					// Check registered data
-					exp := tc.expRegisterData
-					if exp != nil {
-						// We add boolean result
-						exp["result"] = res
-					} else {
-						// No data is expected, we
-						// just expect boolean result
-						exp = ctx.Result{"result": res}
-					}
-					assert.Equal(t,
-						ctx.Registered{tc.expRegister: exp}, c.R)
-				}
-				// Check Mock calls
-				p.AssertExpectations(t)
+			p.On("Call", mock.Anything).Return(true)
+			parsedConf := map[string]interface{}{}
+			p.On("Params").Return(&parsedConf)
+			if tc.expRegister != "" {
+				p.On("Result").Return(tc.expRegisterData)
 			}
-		}
+
+			// Evaluate
+			res := Process(log.Logger, cfg, c)
+			// Check boolean result
+			assert.Equal(t, tc.expResult, res, "Wrong return for test "+tc.name)
+			if res {
+				if tc.expVars != nil {
+					// Check variables set by predicate
+					assert.Equal(t, tc.expVars, c.V, "Variables mismatch")
+				} else if tc.expDef != nil {
+					// Check default set by predicate
+					assert.Equal(t, tc.expDef, c.Default, "Default mismatch")
+				} else {
+					// Check params received by predicate
+					assert.Equal(t, tc.expConf, parsedConf)
+					if tc.expRegister != "" {
+						// Check registered data
+						exp := tc.expRegisterData
+						if exp != nil {
+							// We add boolean result
+							exp["result"] = res
+						} else {
+							// No data is expected, we
+							// just expect boolean result
+							exp = ctx.Result{"result": res}
+						}
+						assert.Equal(t,
+							ctx.Registered{tc.expRegister: exp}, c.R)
+					}
+					// Check Mock calls
+					p.AssertExpectations(t)
+				}
+			}
+		})
 	}
 }
 
