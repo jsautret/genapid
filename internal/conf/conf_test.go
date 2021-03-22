@@ -148,6 +148,15 @@ n: '=len( [1, 2, "foo"] )'
 			},
 		},
 		{
+			name: "Upper",
+			conf: `
+s1: '=upper("aB2c,d")'
+`,
+			expected: params{
+				S1: "AB2C,D",
+			},
+		},
+		{
 			name: "Number",
 			conf: `
 i: '=40+2'

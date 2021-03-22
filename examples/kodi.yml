@@ -20,6 +20,9 @@
     readfile:
       yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
     register: strings
+  - name: Set country code # TODO use yaml mapping
+    set:
+      - country: = In.URL.Params.lang[0]+"-"+upper(In.URL.Params.lang[0])
   - name: Set default values for match & jsonrcp
     default:
       match: # Phrase from Google Assistant sent by IFTTT
@@ -33,9 +36,9 @@
         # Google Home IP addr
         addr: 192.168.3.9
         # TTS params
-        language_code: fr-FR
-        voice_name: fr-FR-Standard-C
-        # Credentials to use Google TTS service
+        language_code: =V.country
+        voice_name: '=V.country+"-Standard-C"'
+        # Credentials to use Google API service for TTS
         google_service_account: "~/.credentials/google_service_account.json"
 
 # We use one sub-pipe per phrase to match:
@@ -100,7 +103,7 @@
       when: '=len(V.unwatched) == 0'
       chromecast:
         tts: '=format(R.strings.content.play_tvshow.notfound, V.title)'
-      result: =false
+      result: =false # stop here
 
     - name: Log the tvshow that will be played
       log:

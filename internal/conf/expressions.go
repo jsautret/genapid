@@ -23,7 +23,7 @@ func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 		return gval.Evaluate(s[1:], c,
 			jsonpath.Language(), jsonpathFunction(),
 			pipeOperator(), fuzzyFunction(), formatFunction(),
-			lenFunction())
+			lenFunction(), upperFunction())
 	}
 	return s, nil
 }
@@ -174,7 +174,7 @@ func formatFunction() gval.Language {
 	})
 }
 
-// Add a format(string, parameters...) function to Gval
+// Add a len(list) function to Gval
 func lenFunction() gval.Language {
 	return gval.Function("len", func(arguments ...interface{}) (interface{}, error) {
 		if len(arguments) != 1 {
@@ -185,5 +185,19 @@ func lenFunction() gval.Language {
 			return nil, errors.New("len() expects list as argument")
 		}
 		return len(l), nil
+	})
+}
+
+// Add a format(string, parameters...) function to Gval
+func upperFunction() gval.Language {
+	return gval.Function("upper", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 1 {
+			return nil, errors.New("upper() expects exactly one argument")
+		}
+		s, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("upper() expects string as argument")
+		}
+		return strings.ToUpper(s), nil
 	})
 }
