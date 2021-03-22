@@ -46,6 +46,15 @@ string: ABCD
 			invalidParam: true,
 		},
 		{
+			name: "FixedRegexp",
+			conf: `
+string: ABCD
+fixed: ABCD
+regexp: ABCD
+`,
+			invalidParam: true,
+		},
+		{
 			name: "FixedMatched",
 			conf: `
 string: "ABCD"
@@ -68,15 +77,6 @@ string: ""
 fixed: ""
 `,
 			invalidParam: true,
-		},
-		{
-			name: "FixedAndRegexp",
-			conf: `
-string: "AAA"
-fixed: "AAA"
-regexp: "XXX"
-`,
-			expResult: true,
 		},
 		{
 			name: "EmptyRegexp",

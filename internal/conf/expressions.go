@@ -60,7 +60,6 @@ func jsonpathFunction() gval.Language {
 		if !ok {
 			return nil, fmt.Errorf("jsonpath() expects string as first argument")
 		}
-		fmt.Println("XXX", arguments[0])
 		if r, err := toJSON(arguments[1]); err != nil {
 			log.Warn().Err(err).Msg("Cannot convert to json")
 		} else {

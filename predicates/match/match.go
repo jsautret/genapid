@@ -17,13 +17,13 @@ type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
 		String string `validate:"required"`
-		Fixed  string `validate:"required_without=Regexp"`
-		Regexp string `validate:"required_without=Fixed"`
+		Fixed  string `validate:"required_without=Regexp,excluded_with=Regexp"`
+		Regexp string `validate:"required_without=Fixed,excluded_with=Fixed"`
 	}
 	results ctx.Result // result of regexp match
 }
 
-// Call evaluate the predicate
+// Call evaluates the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
 	log.Debug().Str("string", p.String).Msg("")
