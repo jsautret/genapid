@@ -96,10 +96,10 @@
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
 
-    - when: '=len(V.unwatched) == 0)'
-      name: Movie not found
+    - name: No unwatched episode
+      when: '=len(V.unwatched) == 0'
       chromecast:
-        tts: '=R.strings.content.play_tvshow.not_found'
+        tts: '=format(R.strings.content.play_tvshow.notfound, V.title)'
       result: =false
 
     - name: Log the tvshow that will be played

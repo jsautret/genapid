@@ -22,7 +22,8 @@ func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 	if s != "" && s[0] == '=' {
 		return gval.Evaluate(s[1:], c,
 			jsonpath.Language(), jsonpathFunction(),
-			pipeOperator(), fuzzyFunction(), formatFunction())
+			pipeOperator(), fuzzyFunction(), formatFunction(),
+			lenFunction())
 	}
 	return s, nil
 }
@@ -170,5 +171,19 @@ func formatFunction() gval.Language {
 			return nil, errors.New("format() expects string as first argument")
 		}
 		return fmt.Sprintf(s, arguments[1:]...), nil
+	})
+}
+
+// Add a format(string, parameters...) function to Gval
+func lenFunction() gval.Language {
+	return gval.Function("len", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 1 {
+			return nil, errors.New("len() expects exactly one argument")
+		}
+		l, ok := arguments[0].([]interface{})
+		if !ok {
+			return nil, errors.New("len() expects list as argument")
+		}
+		return len(l), nil
 	})
 }

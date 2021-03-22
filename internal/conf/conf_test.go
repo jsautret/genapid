@@ -22,6 +22,7 @@ type params struct {
 	I      interface{}
 	L1     []string
 	L2     []interface{}
+	N      int
 }
 
 func TestConf(t *testing.T) {
@@ -135,6 +136,15 @@ s1: '=format("%s%v", "Result", 42)'
 `,
 			expected: params{
 				S1: "Result42",
+			},
+		},
+		{
+			name: "Len",
+			conf: `
+n: '=len( [1, 2, "foo"] )'
+`,
+			expected: params{
+				N: 3,
 			},
 		},
 		{
