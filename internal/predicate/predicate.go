@@ -14,11 +14,11 @@ import (
 )
 
 type pOptions struct {
-	register, name, result string
-	p                      genapid.Predicate
-	pipe                   conf.Pipe
-	set                    []map[string]interface{}
-	def                    ctx.DefaultParams
+	register, name, result, when string
+	p                            genapid.Predicate
+	pipe                         conf.Pipe
+	set                          []map[string]interface{}
+	def                          ctx.DefaultParams
 }
 
 func (o pOptions) hasPredicate() bool {
@@ -42,6 +42,10 @@ func getOptions(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) (*pOptions,
 			}
 		case "name":
 			if !assignOption(log, "name", &o.name, node) {
+				return nil, false
+			}
+		case "when":
+			if !assignOption(log, "when", &o.when, node) {
 				return nil, false
 			}
 		case "set":
@@ -73,6 +77,19 @@ func Process(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) bool {
 	if !ok {
 		return false
 	}
+	var when bool
+	if o.when != "" {
+		if !conf.GetParams(c, o.when, &when) {
+			log.Warn().Err(errors.New("'when' is not boolean")).Msg("")
+			// we consider it false
+			return true
+		}
+		if !when {
+			// if when is false, we continue to next predicate
+			return true
+		}
+	}
+
 	if len(o.set) > 0 {
 		return processSet(log, o, c)
 	}

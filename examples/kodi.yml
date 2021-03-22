@@ -51,8 +51,6 @@
         procedure: Application.SetMute
         params:
           mute: toggle
-    - chromecast:
-        tts: "OK"
     result: "= !R.mute.result" # Stop here if the phrase was matched
 
 
@@ -97,6 +95,13 @@
       set:
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
+
+    - when: '=len(V.unwatched) == 0)'
+      name: Movie not found
+      chromecast:
+        tts: '=R.strings.content.play_tvshow.not_found'
+      result: =false
+
     - name: Log the tvshow that will be played
       log:
         msg: >
@@ -135,6 +140,7 @@
                        R.movies.response)
     - log:      # Log the movie that will be played
         msg: '=format(R.strings.content.play_movie.feedback, V.title)'
+
 
     - name: Play the movie
       jsonrpc:

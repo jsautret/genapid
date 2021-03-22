@@ -84,6 +84,33 @@ set:
 `,
 		},
 		{
+			name:         "setWhenTrue",
+			expPredicate: "test_set",
+			expResult:    true,
+			expVars: ctx.Variables{
+				"v1": "val1",
+				"v2": "val2",
+			},
+			conf: `
+set:
+  - v1: val1
+  - v2: val2
+when: =true
+`,
+		},
+		{
+			name:         "setWhenFalse",
+			expPredicate: "test_set",
+			expResult:    true,
+			expVars:      ctx.Variables{},
+			conf: `
+set:
+  - v1: val1
+  - v2: val2
+when: =false
+`,
+		},
+		{
 			name:         "setAndPredicate",
 			expPredicate: "test_set",
 			expResult:    false,

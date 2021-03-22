@@ -202,6 +202,29 @@ func TestFullConf(t *testing.T) {
       msg: NotExecuted
 `,
 		},
+		{
+			name:       "When",
+			method:     http.MethodGet,
+			path:       "/When",
+			statusCode: http.StatusOK,
+			logFound: expLog{
+				{"log": "Start"},
+				{"log": "End"},
+			},
+			logNotFound: expLog{{"log": "Skipped"}},
+			conf: `
+- name: "When"
+  pipe:
+    - log:
+        msg: Start
+      when: =true
+    - when: =false
+      log:
+        msg: Skipped
+    - log:
+        msg: End
+`,
+		},
 	}
 	for _, tc := range tt {
 		zerolog.SetGlobalLevel(logLevel)
