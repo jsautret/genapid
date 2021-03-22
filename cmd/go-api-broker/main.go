@@ -59,8 +59,9 @@ func main() {
 
 	config = conf.Read(configFileName)
 
-	http.HandleFunc("/quit", quit)
-	http.HandleFunc("/", handler)
+	server := http.NewServeMux()
+	server.HandleFunc("/quit", quit)
+	server.HandleFunc("/", handler)
 
 	for k := range plugins.List() {
 		log.Info().Str("plugin", k).Msg("Plugin enabled")
@@ -68,5 +69,5 @@ func main() {
 	log.Info().Str("app", "started").Int("port", 9191).
 		Msgf("Application started and listening to :%v", 9191)
 
-	log.Fatal().Err(http.ListenAndServe(":9191", nil)).Msg("")
+	log.Fatal().Err(http.ListenAndServe(":9191", server)).Msg("")
 }
