@@ -44,14 +44,28 @@ json: testdata/test1.json
 			conf: `
 yaml: testdata/nofile.yaml
 `,
-			invalidParam: true,
+			expResult: false,
+		},
+		{
+			name: "InvalidYAML",
+			conf: `
+yaml: testdata/invalid
+`,
+			expResult: false,
+		},
+		{
+			name: "InvalidJSON",
+			conf: `
+json: testdata/invalid
+`,
+			expResult: false,
 		},
 		{
 			name: "NoFileJSON",
 			conf: `
 json: testdata/nofile.yaml
 `,
-			invalidParam: true,
+			expResult: false,
 		},
 		{
 			name: "YAMLEmpty",
@@ -64,6 +78,18 @@ yaml: testdata/empty
 			name: "YAML",
 			conf: `
 yaml: testdata/test1.yaml
+`,
+			expResult: true,
+			expResults: map[string]interface{}{
+				"key1": "value1",
+				"key2": []interface{}{"value21", "value22"},
+				"key3": map[string]interface{}{"key31": "value31", "key32": "value32", "key33": "value33"},
+			},
+		},
+		{
+			name: "JSON",
+			conf: `
+json: testdata/test1.json
 `,
 			expResult: true,
 			expResults: map[string]interface{}{

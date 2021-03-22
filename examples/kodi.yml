@@ -1,18 +1,27 @@
-- name: "IFTTT"
-  pipe: # Validate that it's an incoming IFTTT request
-  - match: # run only on IFTTT dedicated endpoint
+- name: "Validate that it's an incoming IFTTT request"
+  pipe:
+  - name: Run only on IFTTT dedicated endpoint
+    match:
       string: =In.Req.URL.Path
       fixed: /ifttt
-  - match: # must be HTTP POST
+  - name: must be HTTP POST
+    match:
       string: =In.Req.Method
       fixed: POST
-  - match: # body must be json
+  - name: Body must be json
+    match:
       string: =In.Mime
       fixed: application/json
-  - match: # body must be a json object that contains the token set in IFTTT
+  - name: body must be a json object that contains the token set in IFTTT
+    match:
       string: = jsonpath("$.token", In.Body)
       fixed: abcd
-  - default: # Set default values for following predicates
+  - name: Read strings corresponding to language param
+    readfile:
+      yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
+    register: strings
+  - name: Set default values for match & jsonrcp
+    default:
       match: # Phrase from Google Assistant sent by IFTTT
         string: = In.URL.Params.phrase[0]
       jsonrpc: # Kodi API params
@@ -20,35 +29,58 @@
         basic_auth:
           username: kodi
           password: ghghpczyuq
+      chromecast: # Used to give feedback to commands
+        # Google Home IP addr
+        addr: 192.168.3.9
+        # TTS params
+        language_code: fr-FR
+        voice_name: fr-FR-Standard-C
+        # Credentials to use Google TTS service
+        google_service_account: "~/.credentials/google_service_account.json"
 
-  - name: "Mute"
+# We use one sub-pipe per phrase to match:
+
+  - name: Mute sound
     pipe:
-    - match:
-        regexp: "^(?i)mute|coupe le son|(re)?mets le son$"
+    - name: Match a phrase asking to mute sound
+      match:
+        regexp:  =R.strings.content.mute.regexp
       register: mute
-    - jsonrpc:
+    - name: Mute sound on Kodi
+      jsonrpc:
         procedure: Application.SetMute
         params:
           mute: toggle
+    - chromecast:
+        tts: "OK"
     result: "= !R.mute.result" # Stop here if the phrase was matched
 
 
-  - name: "Play episode"
+  - name: Play episode
     pipe:
-    - match:    # Match a phrase asking to play a episode
-        regexp: "^(?i)(démarre|lance|joue|mets)( un)? épisode( de)? (?P<title>.+)$"
+    - name: Match a phrase asking to play a episode
+      match:
+        regexp: =R.strings.content.play_tvshow.regexp
       register: tvshow
 
-    - jsonrpc:  # Get the list of all available tvshows
+    - name: Get the list of all available tvshows
+      jsonrpc:
         procedure: VideoLibrary.GetTVShows
       register: tvshows
 
-    - set:      # Get the tvshowid using a fuzzy search on all tvshows titles
+    - name: Get the tvshowid using a fuzzy search on all tvshows titles
+      set:
+        # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.tvshows.response | $.tvshows[*].label'
+        # get best matching title
         - title:   '= fuzzy(R.tvshow.named.title, V.titles)'
-        - tvshowid: '= jsonpath(format(`$.tvshows[?(@.label=="%s")].tvshowid`, V.title), R.tvshows.response)'
+        # get id corresponding to matched title
+        - tvshowid: >
+            = jsonpath(format(`$.tvshows[?(@.label=="%s")].tvshowid`, V.title),
+              R.tvshows.response)
 
-    - jsonrpc:  # Get the list of all episodes for that tvshow
+    - name: Get the list of all episodes for that tvshow
+      jsonrpc:
         procedure: VideoLibrary.GetEpisodes
         params:
           tvshowid: =V.tvshowid[0]
@@ -61,13 +93,17 @@
             - episode
       register: episodes
 
-    - set:      # Get a list of only unwatched episodes
+    - name: Get a list of only unwatched episodes
+      set:
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
-    - log:      # Log the tvshow that will be played
-        msg: '=format("Playing %v episode %v", V.title, V.unwatched_label[0])'
+    - name: Log the tvshow that will be played
+      log:
+        msg: >
+          =format(R.strings.content.play_tvshow.feedback, V.title, V.unwatched_label[0])
 
-    - jsonrpc:
+    - name: Play episdoe
+      jsonrpc:
         procedure: Player.Open
         params:
           item: # Play the first unwatched episode
@@ -75,24 +111,33 @@
     result: '=!R.tvshow.result' # Stop here if the phrase was matched
 
 
-  - name: "Play movie"
+  - name: Play movie
     pipe:
-    - match:    # Match a phrase asking to play a movie
-        regexp: "^(?i)(démarre|lance|joue|mets) (?P<title>.+)$"
+    - name: Match a phrase asking to play a movie
+      match:
+        regexp: =R.strings.content.play_movie.regexp
       register: movie
 
-    - jsonrpc:  # Get the list of all available movies
+    - name: Get the list of all available movies
+      jsonrpc:
         procedure: VideoLibrary.GetMovies
       register: movies
 
-    - set:      # Get the movie ID using a fuzzy search on all titles
+    - name: Get the movie ID using a fuzzy search on all titles
+      set:
+          # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.movies.response | $.movies[*].label'
+          # get best matching title
         - title:   '= fuzzy(R.movie.named.title, V.titles)'
-        - movieid: '= jsonpath(format(`$.movies[?(@.label=="%s")].movieid`, V.title), R.movies.response)'
+          # get id corresponding to matched title
+        - movieid: >
+            = jsonpath(format(`$.movies[?(@.label=="%s")].movieid`, V.title),
+                       R.movies.response)
     - log:      # Log the movie that will be played
-        msg: '=format("Playing %v, id: %v", V.title, V.movieid[0])'
+        msg: '=format(R.strings.content.play_movie.feedback, V.title)'
 
-    - jsonrpc:  # Play the movie
+    - name: Play the movie
+      jsonrpc:
         procedure: Player.Open
         params:
           item:

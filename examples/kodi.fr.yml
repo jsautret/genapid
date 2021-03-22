@@ -1,0 +1,8 @@
+mute:
+  regexp: "^(?i)mute|coupe le son|(re)?mets le son$"
+play_tvshow:
+  regexp: "^(?i)(démarre|lance|joue|mets)( un)? épisode( de)? (?P<title>.+)$"
+  feedback: "Lancement de %v épisode %v"
+play_movie:
+  regexp: "^(?i)(démarre|lance|joue|mets) (?P<title>.+)$"
+  feedback: "Lancement de %v"
