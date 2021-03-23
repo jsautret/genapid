@@ -130,6 +130,15 @@ s1: '=fuzzy("whl", V.fuzzy)'
 			},
 		},
 		{
+			name: "FuzzyNoMatch",
+			conf: `
+s1: '=fuzzy("x", V.fuzzy)'
+`,
+			expected: params{
+				S1: "",
+			},
+		},
+		{
 			name: "Format",
 			conf: `
 s1: '=format("%s%v", "Result", 42)'

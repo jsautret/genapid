@@ -133,8 +133,11 @@ func fuzzyFunction() gval.Language {
 		}
 		matches := fuzzysearch.RankFindNormalizedFold(
 			source, targets)
-		sort.Sort(matches)
-		return matches[0].Target, nil
+		if len(matches) > 0 {
+			sort.Sort(matches)
+			return matches[0].Target, nil
+		}
+		return "", nil
 	})
 }
 
