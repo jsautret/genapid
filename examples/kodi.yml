@@ -20,9 +20,15 @@
     readfile:
       yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
     register: strings
-  - name: Set country code # TODO use yaml mapping
+  - name: Voices for TTS
     set:
-      - country: = In.URL.Params.lang[0]+"-"+upper(In.URL.Params.lang[0])
+      - voices: # https://cloud.google.com/text-to-speech/docs/voices
+          fr:
+            - fr-FR
+            - fr-FR-Standard-C
+          en:
+            - en-US
+            - en-US-Standard-G
   - name: Set default values for match & jsonrcp
     default:
       match: # Phrase from Google Assistant sent by IFTTT
@@ -36,12 +42,12 @@
         # Google Home IP addr
         addr: 192.168.3.9
         # TTS params
-        language_code: =V.country
-        voice_name: '=V.country+"-Standard-C"'
+        language_code: '=V.voices[In.URL.Params.lang[0]][0]'
+        voice_name: '=V.voices[In.URL.Params.lang[0]][1]'
         # Credentials to use Google API service for TTS
         google_service_account: "~/.credentials/google_service_account.json"
 
-# We use one sub-pipe per phrase to match:
+# We use one sub-pipe per action to be done:
 
   - name: Mute sound
     pipe:
@@ -55,6 +61,84 @@
         params:
           mute: toggle
     result: "= !R.mute.result" # Stop here if the phrase was matched
+
+
+  - name: Play/Pause
+    pipe:
+    - name: Match a phrase asking to play or pause
+      match:
+        regexp:  =R.strings.content.playpause.regexp
+      register: playpause
+    - name: Playpause Kodi video
+      jsonrpc:
+        procedure: Player.PlayPause
+        params:
+          playerid: 1 # video player
+      result: =true # in case no video was playing
+    - name: Playpause Kodi audio
+      jsonrpc:
+        procedure: Player.PlayPause
+        params:
+          playerid: 0 # audio player
+    result: "= !R.playpause.result" # Stop here if the phrase was matched
+
+
+  - name: Stop
+    pipe:
+    - name: Match a phrase asking to stop
+      match:
+        regexp:  =R.strings.content.stop.regexp
+      register: stop
+    - name: Stop Kodi video
+      jsonrpc:
+        procedure: Player.Stop
+        params:
+          playerid: 1 # video player
+      result: =true # in case no video was playing
+    - name: Stop Kodi audio
+      jsonrpc:
+        procedure: Player.Stop
+        params:
+          playerid: 0 # audio player
+    result: "= !R.stop.result" # Stop here if the phrase was matched
+
+
+  - name: Scan library
+    pipe:
+    - name: Match a phrase asking to scan library
+      match:
+        regexp:  =R.strings.content.scan_library.regexp
+      register: scan
+
+    - name: Scan library on Kodi
+      jsonrpc:
+        procedure: VideoLibrary.Scan
+
+    - name: Log command
+      log:
+        msg: '=R.strings.content.scan_library.feedback'
+    - name: Acknowledge command
+      chromecast:
+        tts: '=R.strings.content.scan_library.feedback'
+
+    result: "= !R.scan.result" # Stop here if the phrase was matched
+
+  - name: Clean library
+    pipe:
+    - name: Match a phrase asking to clean library
+      match:
+        regexp:  =R.strings.content.clean_library.regexp
+      register: clean
+
+    - name: Clean library on Kodi
+      jsonrpc:
+        procedure: VideoLibrary.Clean
+
+    - name: Acknowledge command
+      chromecast:
+        tts: '=R.strings.content.clean_library.feedback'
+
+    result: "= !R.clean.result" # Stop here if the phrase was matched
 
 
   - name: Play episode
@@ -119,6 +203,214 @@
     result: '=!R.tvshow.result' # Stop here if the phrase was matched
 
 
+
+  - name: Play song
+    pipe:
+    - name: Match a phrase asking to play a song
+      match:
+        regexp: =R.strings.content.play_song.regexp
+      register: song
+
+    - name: Get the list of all available songs
+      jsonrpc:
+        procedure: AudioLibrary.GetSongs
+      register: songs
+
+    - name: Get the song ID using a fuzzy search on all titles
+      set:
+          # get titles from Kodi response with a jsonpath expression
+        - titles:  '= R.songs.response | $.songs[*].label'
+          # get best matching title
+        - title:   '= fuzzy(R.song.named.title, V.titles)'
+          # get id corresponding to matched title
+        - songid: >
+            = jsonpath(format(`$.songs[?(@.label=="%s")].songid`, V.title),
+                       R.songs.response)
+
+    - name: No song found
+      when: '=len(V.songid) == 0'
+      chromecast:
+        tts: '=format(R.strings.content.play_song.notfound, R.song.named.title)'
+      result: =false # stop here
+
+    - log:      # Log the song that will be played
+        msg: '=format(R.strings.content.play_song.feedback, V.title)'
+
+    - name: Turn on TV # needs json-cec addon installed on Kodi
+      jsonrpc:
+        procedure: Addons.ExecuteAddon
+        params:
+          addonid: script.json-cec
+          params:
+            command: activate
+      result: =true # ignore if addon not installed
+
+    - name: Play the song
+      jsonrpc:
+        procedure: Player.Open
+        params:
+          item:
+            songid: "=V.songid[0]"
+    result: "=!R.song.result" # Stop here if the phrase was matched
+
+
+  - name: Play album
+    pipe:
+    - name: Match a phrase asking to play an album
+      match:
+        regexp: =R.strings.content.play_album.regexp
+      register: album
+
+    - name: Get the list of all available albums
+      jsonrpc:
+        procedure: AudioLibrary.GetAlbums
+      register: albums
+
+    - name: Get the album ID using a fuzzy search on all titles
+      set:
+          # get titles from Kodi response with a jsonpath expression
+        - titles:  '= R.albums.response | $.albums[*].label'
+          # get best matching title
+        - title:   '= fuzzy(R.album.named.title, V.titles)'
+          # get id corresponding to matched title
+        - albumid: >
+            = jsonpath(format(`$.albums[?(@.label=="%s")].albumid`, V.title),
+                       R.albums.response)
+
+    - name: No album found
+      when: '=len(V.albumid) == 0'
+      chromecast:
+        tts: '=format(R.strings.content.play_album.notfound, R.album.named.title)'
+      result: =false # stop here
+
+    - log:      # Log the album that will be played
+        msg: '=format(R.strings.content.play_album.feedback, V.title)'
+
+    - name: Turn on TV # needs json-cec addon installed on Kodi
+      jsonrpc:
+        procedure: Addons.ExecuteAddon
+        params:
+          addonid: script.json-cec
+          params:
+            command: activate
+      result: =true # ignore if addon not installed
+
+    - name: Play the album
+      jsonrpc:
+        procedure: Player.Open
+        params:
+          item:
+            albumid: "=V.albumid[0]"
+    result: "=!R.album.result" # Stop here if the phrase was matched
+
+
+
+
+  - name: Play artist
+    pipe:
+    - name: Match a phrase asking to play an artist
+      match:
+        regexp: =R.strings.content.play_artist.regexp
+      register: artist
+
+    - name: Get the list of all available artists
+      jsonrpc:
+        procedure: AudioLibrary.GetArtists
+      register: artists
+
+    - name: Get the artist ID using a fuzzy search on all artists
+      set:
+          # get artists from Kodi response with a jsonpath expression
+        - artists:  '= R.artists.response | $.artists[*].label'
+          # get best matching artist
+        - artist:   '= fuzzy(R.artist.named.artist, V.artists)'
+          # get id corresponding to matched artist
+        - artistid: >
+            = jsonpath(format(`$.artists[?(@.label=="%s")].artistid`, V.artist),
+                       R.artists.response)
+
+    - name: No artist found
+      when: '=len(V.artistid) == 0'
+      chromecast:
+        tts: '=format(R.strings.content.play_artist.notfound, R.artist.named.artist)'
+      result: =false # stop here
+
+    - log:      # Log the artist that will be played
+        msg: '=format(R.strings.content.play_artist.feedback, V.artist)'
+
+    - name: Turn on TV # needs json-cec addon installed on Kodi
+      jsonrpc:
+        procedure: Addons.ExecuteAddon
+        params:
+          addonid: script.json-cec
+          params:
+            command: activate
+      result: =true # ignore if addon not installed
+
+    - name: Play the artist
+      jsonrpc:
+        procedure: Player.Open
+        params:
+          item:
+            artistid: "=V.artistid[0]"
+          options:
+            shuffled: true
+    result: "=!R.artist.result" # Stop here if the phrase was matched
+
+
+  - name: Play genre
+    pipe:
+    - name: Match a phrase asking to play an genre
+      match:
+        regexp: =R.strings.content.play_genre.regexp
+      register: genre
+
+    - name: Get the list of all available genres
+      jsonrpc:
+        procedure: AudioLibrary.GetGenres
+      register: genres
+
+    - name: Get the genre ID using a fuzzy search on all genres
+      set:
+          # get genres from Kodi response with a jsonpath expression
+        - genres:  '= R.genres.response | $.genres[*].label'
+          # get best matching genre
+        - genre:   '= fuzzy(R.genre.named.genre, V.genres)'
+          # get id corresponding to matched genre
+        - genreid: >
+            = jsonpath(format(`$.genres[?(@.label=="%s")].genreid`, V.genre),
+                       R.genres.response)
+
+    - name: No genre found
+      when: '=len(V.genreid) == 0'
+      chromecast:
+        tts: '=format(R.strings.content.play_genre.notfound, R.genre.named.genre)'
+      result: =false # stop here
+
+    - log:      # Log the genre that will be played
+        msg: '=format(R.strings.content.play_genre.feedback, V.genre)'
+
+    - name: Turn on TV # needs json-cec addon installed on Kodi
+      jsonrpc:
+        procedure: Addons.ExecuteAddon
+        params:
+          addonid: script.json-cec
+          params:
+            command: activate
+      result: =true # ignore if addon not installed
+
+    - name: Play the genre
+      jsonrpc:
+        procedure: Player.Open
+        params:
+          item:
+            genreid: "=V.genreid[0]"
+          options:
+            shuffled: true
+    result: "=!R.genre.result" # Stop here if the phrase was matched
+
+
+
   - name: Play movie
     pipe:
     - name: Match a phrase asking to play a movie
@@ -141,9 +433,15 @@
         - movieid: >
             = jsonpath(format(`$.movies[?(@.label=="%s")].movieid`, V.title),
                        R.movies.response)
+
+    - name: Movie not found
+      chromecast:
+        tts: '=format(R.strings.content.play_movie.notfound, R.movie.named.title)'
+      when: '=len(V.movieid) == 0'
+      result: =false # stop here
+
     - log:      # Log the movie that will be played
         msg: '=format(R.strings.content.play_movie.feedback, V.title)'
-
 
     - name: Play the movie
       jsonrpc:
