@@ -18,8 +18,8 @@ var Name = "readfile"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		JSON string `validate:"required_without=YAML,excluded_with=YAML"`
-		YAML string `validate:"required_without=JSON,excluded_with=JSON"`
+		JSON string `validate:"required_without=YAML,excluded_with=YAML" mod:"path"`
+		YAML string `validate:"required_without=JSON,excluded_with=JSON" mod:"path"`
 	}
 	results ctx.Result // content of file
 }

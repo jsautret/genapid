@@ -6,7 +6,6 @@ import (
 
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/genapid"
-	"github.com/jsautret/go-api-broker/internal/fileutils"
 	"github.com/rs/zerolog"
 	"github.com/vishen/go-chromecast/tts"
 )
@@ -18,7 +17,7 @@ var Name = "chromecast"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		GoogleServiceAccount string  `validate:"required" mapstructure:"google_service_account"`
+		GoogleServiceAccount string  `validate:"required" mod:"path" mapstructure:"google_service_account"`
 		LanguageCode         string  `validate:"required" mapstructure:"language_code"`
 		VoiceName            string  `validate:"required" mapstructure:"voice_name"`
 		Addr                 string  `validate:"required,ip"`
@@ -34,7 +33,7 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
 	log.Debug().Str("tts", p.TTS).Msg("")
 
-	b, err := ioutil.ReadFile(fileutils.Path(p.GoogleServiceAccount))
+	b, err := ioutil.ReadFile(p.GoogleServiceAccount)
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to open google service account file")
 		return false

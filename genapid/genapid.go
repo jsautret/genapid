@@ -7,10 +7,12 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/go-playground/mold/v4"
 	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/go-api-broker/internal/fileutils"
 	"github.com/rs/zerolog"
 )
 
@@ -53,5 +55,15 @@ func InitPredicate(log zerolog.Logger, c *ctx.Ctx,
 }
 
 func init() {
-	validate = validator.New()
+	modify.Register("path", pathModifier)
+}
+
+// Expands ~ like the shell would do
+func pathModifier(ctx context.Context, fl mold.FieldLevel) error {
+	s, ok := fl.Field().Interface().(string)
+	if !ok {
+		return nil
+	}
+	fl.Field().SetString(fileutils.Path(s))
+	return nil
 }
