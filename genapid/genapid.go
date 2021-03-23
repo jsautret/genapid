@@ -3,16 +3,22 @@ package genapid
 //go:generate mockery --disable-version-string --log-level error --name Predicate
 
 import (
+	"context"
 	"errors"
+	"reflect"
 
+	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
 	"github.com/jsautret/go-api-broker/ctx"
 	"github.com/jsautret/go-api-broker/internal/conf"
 	"github.com/rs/zerolog"
 )
 
-// use a single instance of Validate, it caches struct info
-var validate *validator.Validate
+var (
+	// use a single instance of Validate, it caches struct info
+	validate = validator.New()
+	modify   = modifiers.New()
+)
 
 // Predicate is the interface of a predicate plugin
 type Predicate interface {
@@ -30,13 +36,18 @@ func InitPredicate(log zerolog.Logger, c *ctx.Ctx,
 		log.Error().Err(errors.New("Invalid params")).Msg("")
 		return false
 	}
-	if err := validate.Struct(params); err != nil {
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			// We are probably in a test simulating a param struct
-			return true
+
+	if t := reflect.ValueOf(params); t.Kind() == reflect.Ptr &&
+		t.Elem().Kind() == reflect.Struct {
+		if err := modify.Struct(context.Background(), params); err != nil {
+			log.Error().Err(err).Msg("")
+			return false
 		}
-		log.Error().Err(err).Msg("")
-		return false
+
+		if err := validate.Struct(params); err != nil {
+			log.Error().Err(err).Msg("")
+			return false
+		}
 	}
 	return true
 }

@@ -18,21 +18,20 @@ var Name = "chromecast"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		GoogleServiceAccount string `validate:"required" mapstructure:"google_service_account"`
-		LanguageCode         string `validate:"required" mapstructure:"language_code"`
-		VoiceName            string `validate:"required" mapstructure:"voice_name"`
-		Addr                 string `validate:"required,ip"`
-		TTS                  string `validate:"required"`
+		GoogleServiceAccount string  `validate:"required" mapstructure:"google_service_account"`
+		LanguageCode         string  `validate:"required" mapstructure:"language_code"`
+		VoiceName            string  `validate:"required" mapstructure:"voice_name"`
+		Addr                 string  `validate:"required,ip"`
+		Port                 int     `validate:"required" mod:"default=8009"`
+		TTS                  string  `validate:"required"`
+		SpeakingRate         float32 `validate:"required" mod:"default=1.0" mapstructure:"speaking_rate"`
+		Pitch                float32 `validate:"required" mod:"default=1.0"`
 	}
 }
 
 // Call evaluates the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
-
-	SpeakingRate := float32(1.0)
-	Pitch := float32(1.0)
-
 	log.Debug().Str("tts", p.TTS).Msg("")
 
 	b, err := ioutil.ReadFile(fileutils.Path(p.GoogleServiceAccount))
@@ -40,13 +39,13 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 		log.Error().Err(err).Msg("Unable to open google service account file")
 		return false
 	}
-	app, err := castApplication(p.Addr)
+	app, err := castApplication(p.Addr, p.Port)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to get cast application")
 		return false
 	}
 
-	data, err := tts.Create(p.TTS, b, p.LanguageCode, p.VoiceName, SpeakingRate, Pitch)
+	data, err := tts.Create(p.TTS, b, p.LanguageCode, p.VoiceName, p.SpeakingRate, p.Pitch)
 	if err != nil {
 		log.Error().Err(err).Msg("")
 		return false

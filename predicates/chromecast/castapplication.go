@@ -67,17 +67,16 @@ func (e cachedDNSEntry) GetPort() int {
 	return e.Port
 }
 
-func castApplication(addr string) (*application.Application, error) {
+func castApplication(addr string, port int) (*application.Application, error) {
 	// TODO move to predicate parameters
 	deviceName := ""
 	disableCache := false
-	port := 8009
 	ifaceName := ""
 	dnsTimeoutSeconds := 3
 	device := ""
 	useFirstDevice := true
 	deviceUUID := ""
-	debug := true
+	debug := false
 
 	// Used to try and reconnect
 	if deviceUUID == "" && entry != nil {
