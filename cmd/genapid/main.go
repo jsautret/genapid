@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/plugins"
+	"github.com/jsautret/genapid/app/conf"
+	"github.com/jsautret/genapid/app/plugins"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

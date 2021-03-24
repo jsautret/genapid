@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/jsautret/go-api-broker/ctx"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
@@ -53,7 +53,7 @@ l1:
 			conf: `
 s1: string1
 s2: string2
-i: 
+i:
   - i1
   - i2
 l1:
@@ -179,7 +179,7 @@ i: '=40+2'
 			conf: `
 i:
   item1: ="123"
-  item2: 
+  item2:
   - ="item21"
   - item22
   item3: =789
@@ -218,11 +218,6 @@ l1:
 			if !GetPredicateParams(context, &conf, &p) {
 				t.Errorf("Cannot convert params %v", conf)
 			} else {
-				//fmt.Printf("I %v\n", reflect.ValueOf(p.I).Kind())
-				//item1 := p2.(*params).I.(Params)["item1"]
-				//t.Logf("item1 %v (%v)", item1, reflect.TypeOf(item1))
-				//item3 := p2.(*params).I.(Params)["item3"]
-				//t.Logf("item3 %v (%v)", item3, reflect.TypeOf(item3))
 				if diff := deep.Equal(p, c.expected); diff != nil {
 					t.Error(diff)
 				}

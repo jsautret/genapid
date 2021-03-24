@@ -10,9 +10,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
-	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -39,7 +39,6 @@ func TestJsonrpc(t *testing.T) {
 		conf         string
 		expected     bool
 		invalidParam bool // true if params values are invalid
-
 	}{
 		{
 			name:         "NoConf",

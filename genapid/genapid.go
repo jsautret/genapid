@@ -10,9 +10,9 @@ import (
 	"github.com/go-playground/mold/v4"
 	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/fileutils"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/app/conf"
+	"github.com/jsautret/genapid/app/fileutils"
 	"github.com/rs/zerolog"
 )
 

@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
 	"gopkg.in/yaml.v3"
 
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/plugins"
+	"github.com/jsautret/genapid/app/conf"
+	"github.com/jsautret/genapid/app/plugins"
 	"github.com/rs/zerolog"
 )
 

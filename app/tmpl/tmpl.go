@@ -7,7 +7,7 @@ import (
 	"sort"
 	"text/template"
 
-	ctx "github.com/jsautret/go-api-broker/ctx"
+	ctx "github.com/jsautret/genapid/ctx"
 
 	"github.com/Masterminds/sprig"
 	"github.com/PaesslerAG/gval"

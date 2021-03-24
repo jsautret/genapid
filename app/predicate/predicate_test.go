@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
-	"github.com/jsautret/go-api-broker/genapid/mocks"
-	"github.com/jsautret/go-api-broker/internal/conf"
-	"github.com/jsautret/go-api-broker/internal/plugins"
+	"github.com/jsautret/genapid/app/conf"
+	"github.com/jsautret/genapid/app/plugins"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
+	"github.com/jsautret/genapid/genapid/mocks"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -61,7 +61,7 @@ test1:
 			},
 			conf: `
 test2:
-  key1: 
+  key1:
     - value11
     - value12
   key2:
@@ -269,30 +269,3 @@ func getConf(t *testing.T, source string) *conf.Predicate {
 	t.Logf("Parsed YAML:\n%# v", pretty.Formatter(c))
 	return &c
 }
-
-/*
-   			name:         "set + predicate",
-			expPredicate: "test_set",
-			expResult:    false,
-			expConf: map[string]interface{}{
-				"key": "value",
-			},
-			expVars: ctx.Variables{
-				"v1": "val1",
-				"v2": "val2",
-			},
-			conf: `
-test_set:
-  key: value
-set:
-  - v1: val1
-  - v2: val2
-`,
-		},
-
-			if tc.expVars != nil {
-				// Check variables set by predicate
-				assert.Equal(t, tc.expVars, c.V, "Variables mismatch")
-			}
-
-*/

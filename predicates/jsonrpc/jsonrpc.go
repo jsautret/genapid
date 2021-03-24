@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
 	"github.com/ybbus/jsonrpc"
 )
@@ -27,7 +27,7 @@ type Predicate struct {
 
 type basicAuth struct{ Username, Password string }
 
-// Call evaluate the predicate
+// Call evaluates the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	p := predicate.params
 	log = log.With().Str("procedure", p.Procedure).Logger()

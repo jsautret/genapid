@@ -2,7 +2,7 @@
 
 package plugins
 
-import logpredicate "github.com/jsautret/go-api-broker/predicates/log"
+import logpredicate "github.com/jsautret/genapid/predicates/log"
 
 func init() {
 	Add(logpredicate.Name, logpredicate.New)

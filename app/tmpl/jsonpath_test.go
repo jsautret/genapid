@@ -16,7 +16,7 @@ var logLevel = zerolog.FatalLevel
 
 var doc = `
 { "store": {
-    "book": [ 
+    "book": [
       { "category": "reference",
         "author": "Nigel Rees",
         "title": "Sayings of the Century",

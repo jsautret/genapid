@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
 	"github.com/vishen/go-chromecast/tts"
 )
@@ -23,8 +23,8 @@ type Predicate struct {
 		Addr                 string  `validate:"required,ip"`
 		Port                 int     `validate:"required" mod:"default=8009"`
 		TTS                  string  `validate:"required"`
-		SpeakingRate         float32 `validate:"required" mod:"default=1.0" mapstructure:"speaking_rate"`
-		Pitch                float32 `validate:"required" mod:"default=1.0"`
+		SpeakingRate         float32 `validate:"required,min=0" mod:"default=1.0" mapstructure:"speaking_rate"`
+		Pitch                float32 `validate:"required,min=0" mod:"default=1.0"`
 	}
 }
 

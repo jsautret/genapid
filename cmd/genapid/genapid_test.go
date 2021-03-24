@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jsautret/go-api-broker/internal/conf"
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/zltest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

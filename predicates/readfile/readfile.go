@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
-	"github.com/jsautret/go-api-broker/internal/fileutils"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
+	"github.com/jsautret/genapid/app/fileutils"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )

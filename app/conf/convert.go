@@ -28,7 +28,7 @@ package conf
 import (
 	"reflect"
 
-	"github.com/jsautret/go-api-broker/ctx"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog/log"
 )
 
@@ -133,16 +133,12 @@ func convertRecursive(copy, original reflect.Value, c *ctx.Ctx) {
 
 // Convert Elem if it's a string, remplacing Gval expression by its value
 func convertElem(v reflect.Value, c *ctx.Ctx) reflect.Value {
-	//fmt.Printf("gval1 %v\n", v)
 	if v.Kind() == reflect.String {
-		//fmt.Printf("gval2 %v\n", v)
 		r, err := evaluateGval(v.String(), c)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot evaluate Gval expression")
 			return v
 		}
-		//fmt.Printf("gval3 %v\n", r)
-		//fmt.Printf("gval4 %v\n", r.Kind())
 		return reflect.ValueOf(r)
 	}
 	return v

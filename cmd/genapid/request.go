@@ -5,8 +5,8 @@ import (
 	"mime"
 	"net/http"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/internal/predicate"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/app/predicate"
 	"github.com/rs/zerolog/log"
 )
 

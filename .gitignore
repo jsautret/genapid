@@ -1,2 +1,2 @@
 *.out
-/cmd/go-api-broker/go-api-broker
+/cmd/genapid/genapid

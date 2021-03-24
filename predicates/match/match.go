@@ -4,8 +4,8 @@ import (
 	"errors"
 	"regexp"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
 )
 

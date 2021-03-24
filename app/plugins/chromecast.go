@@ -2,7 +2,7 @@
 
 package plugins
 
-import chromecastpredicate "github.com/jsautret/go-api-broker/predicates/chromecast"
+import chromecastpredicate "github.com/jsautret/genapid/predicates/chromecast"
 
 func init() {
 	Add(chromecastpredicate.Name, chromecastpredicate.New)

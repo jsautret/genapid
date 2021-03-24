@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/genapid"
 )
 
 // Plugins store entrypoint functions of enabled plugins

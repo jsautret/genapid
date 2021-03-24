@@ -12,7 +12,7 @@ import (
 
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
-	"github.com/jsautret/go-api-broker/ctx"
+	"github.com/jsautret/genapid/ctx"
 	fuzzysearch "github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/rs/zerolog/log"
 )

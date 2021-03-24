@@ -3,8 +3,8 @@ package logpredicate
 import (
 	"fmt"
 
-	"github.com/jsautret/go-api-broker/ctx"
-	"github.com/jsautret/go-api-broker/genapid"
+	"github.com/jsautret/genapid/ctx"
+	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
 )
 
@@ -19,7 +19,7 @@ type Predicate struct {
 	}
 }
 
-// Call evaluate a predicate
+// Call evaluates a predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
 	log.Info().Str("log", fmt.Sprintf("%v", predicate.params.Msg)).Msg("")
 

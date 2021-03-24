@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	ctx "github.com/jsautret/go-api-broker/ctx"
+	ctx "github.com/jsautret/genapid/ctx"
 
 	mock "github.com/stretchr/testify/mock"
 
