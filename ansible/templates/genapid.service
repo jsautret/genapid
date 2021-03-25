@@ -1,0 +1,18 @@
+[Unit]
+Description=Generic API Daemon
+
+[Service]
+ExecStart={{genapid_install}}/genapid -port {{genapid_port}} -config {{genapid_conf}} -loglevel {{genapid_loglevel}}
+# Required on some systems
+WorkingDirectory={{genapid_install}}
+User={{genapid_user}}
+Restart=always
+# Restart service after 2 seconds if node service crashes
+RestartSec=2
+# Output to syslog
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=genapid
+
+[Install]
+WantedBy=multi-user.target

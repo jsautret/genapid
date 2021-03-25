@@ -1,0 +1,76 @@
+---
+
+- name: Install genapid service
+  template:
+    src: genapid.service
+    dest: /etc/systemd/system/
+  notify:
+    - Restart genapid
+
+- name: Compile genapid
+  command: go build
+  args:
+    chdir: "{{genapid_src}}/cmd/genapid"
+  environment:
+    GOOS: linux
+    GOARCH: arm
+    GOARM: 5
+  become: false
+  delegate_to: localhost
+  vars:
+    ansible_python_interpreter: python
+
+- name: Copy genapid binary
+  copy:
+    src: "{{genapid_src}}/cmd/genapid/genapid"
+    dest: "{{genapid_install}}"
+    mode: a+rx
+  notify:
+    - Restart genapid
+
+- name: Copy genapid conf
+  template:
+    src: "{{item}}"
+    dest: "{{genapid_conf|dirname}}/"
+  with_items:
+    - api.yml
+    - kodi.fr.yml
+    - kodi.en.yml
+  notify:
+    - Restart genapid
+
+- name: Configure genapid logs
+  copy:
+    content: |
+      if $programname == 'genapid' then /var/log/genapid.log
+      if $programname == 'genapid' then ~
+    dest:
+      /etc/rsyslog.d/genapid.conf
+  notify:
+    - Restart rsyslog
+
+- name: Configure genapid logrotate
+  template:
+    src: logrotate.conf
+    dest: /etc/logrotate.d/genapid
+
+- name: Install genapid apache2 conf
+  template:
+    src: apache.conf
+    dest: "{{genapid_conf|dirname}}/genapid_apache.conf"
+    mode: a+r
+  tags:
+    - httpd_conf
+  notify:
+    - Restart httpd
+
+- name: Configure genapid in apache2
+  lineinfile:
+    path: /etc/apache2/sites-available/000-default-le-ssl.conf
+    regexp: "Include .*genapid_apache.conf"
+    line: "Include {{genapid_conf|dirname}}/genapid_apache.conf"
+    insertbefore: "</VirtualHost>"
+  tags:
+    - httpd_conf
+  notify:
+    - Restart httpd

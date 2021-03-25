@@ -1,0 +1,12 @@
+genapid_src: "{{ lookup('env','HOME')+'/src/genapid' }}"
+
+genapid_install: /usr/local/bin
+genapid_user: daemon
+
+genapid_loglevel: info
+genapid_conf: /etc/genapid/api.yml
+genapid_port: 9110
+genapid_path: /genapid
+
+genapid_ifttt_token: secretToken
+kodi_api_password: secretPasswd

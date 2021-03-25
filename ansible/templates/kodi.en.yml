@@ -1,0 +1,45 @@
+mute:
+  regexp: "^(?i)(mute|unmute)$"
+
+play_tvshow:
+  regexp: "^(?i)play an episode of( the)? tv.?show (?P<title>.+)$"
+  feedback: "Playing %v episode %v"
+  notfound: "No new episode for %v"
+
+play_movie:
+  regexp: "play (the movie )?(?<title>.+)",
+  feedback: "Playing %v"
+
+scan_library:
+  regexp: scan library
+  feedback: Scanning library
+
+clean_library:
+  regexp: clean library
+  feedback: Cleaning library
+
+play_song:
+  regexp: "play the song (?P<title>.+)"
+  feedback: "listening to %v"
+  notfound: "No song %v found"
+
+play_album:
+  regexp: "play the album (?P<title>.+)"
+  feedback: "listening album %v"
+  notfound: "no album %v found"
+
+play_artist:
+  regexp: "play the artist (?P<artist>.+)"
+  feedback: "listening artist %v"
+  notfound: "no artist %v found"
+
+play_genre:
+  regexp: "play the music genre (?P<genre>.+)"
+  feedback: "listening genre %v"
+  notfound: "no genre %v found"
+
+playpause:
+  regexp: "^(unpause|pause|resume)$"
+
+stop:
+  regexp: "^stop$"

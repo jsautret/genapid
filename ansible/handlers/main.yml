@@ -1,0 +1,16 @@
+- name: Restart genapid
+  systemd:
+    name: genapid
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+
+- name: Restart rsyslog
+  systemd:
+    name: rsylog
+    state: restarted
+
+- name: Restart httpd
+  systemd:
+    name: apache2
+    state: restarted
