@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/app/plugins"
@@ -20,12 +21,14 @@ var (
 var (
 	configFileName string
 	SLogLevel      string
+	port           int
 )
 
 // Command line flags definitions
 func init() {
 	flag.StringVar(&configFileName, "config", "route.yml", "Config file")
 	flag.StringVar(&SLogLevel, "loglevel", "info", "Log level")
+	flag.IntVar(&port, "port", 9110, "Listening port")
 }
 
 // Main handler for incoming requests
@@ -35,17 +38,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func quit(w http.ResponseWriter, r *http.Request) {
-	log.Info().Str("app", "stopped").Msg("Application stopped")
-	os.Exit(0)
-}
-
 func main() {
 	flag.Parse()
 
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+		// sdtout is console
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
 	if logLevel, err := zerolog.ParseLevel(SLogLevel); err != nil {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		log.Warn().Err(err).Msg("Forcing info log level")
@@ -59,15 +60,14 @@ func main() {
 
 	config = conf.Read(configFileName)
 
-	server := http.NewServeMux()
-	server.HandleFunc("/quit", quit)
-	server.HandleFunc("/", handler)
-
 	for k := range plugins.List() {
 		log.Info().Str("plugin", k).Msg("Plugin enabled")
 	}
-	log.Info().Str("app", "started").Int("port", 9191).
-		Msgf("Application started and listening to :%v", 9191)
 
-	log.Fatal().Err(http.ListenAndServe(":9191", server)).Msg("")
+	server := http.NewServeMux()
+	server.HandleFunc("/", handler)
+	log.Info().Str("app", "started").Int("port", port).
+		Msgf("Application started and listening to :%v", port)
+
+	log.Fatal().Err(http.ListenAndServe(":"+strconv.Itoa(port), server)).Msg("")
 }
