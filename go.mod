@@ -2,8 +2,6 @@ module github.com/jsautret/genapid
 
 go 1.16
 
-replace github.com/vishen/go-chromecast => /Users/jerome/src/go-chromecast
-
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
