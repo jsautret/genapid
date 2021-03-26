@@ -7,6 +7,7 @@ import (
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
+	"github.com/vishen/go-chromecast/application"
 	"github.com/vishen/go-chromecast/tts"
 )
 
@@ -21,12 +22,15 @@ type Predicate struct {
 		LanguageCode         string  `validate:"required" mapstructure:"language_code"`
 		VoiceName            string  `validate:"required" mapstructure:"voice_name"`
 		Addr                 string  `validate:"required,ip"`
-		Port                 int     `validate:"required" mod:"default=8009"`
+		Port                 int     `validate:"required,gte=0,lte=65535" mod:"default=8009"`
+		ServerPort           int     `validate:"gte=0,lte=65535" mod:"default=0" mapstructure:"server_port"`
 		TTS                  string  `validate:"required"`
 		SpeakingRate         float32 `validate:"required,min=0" mod:"default=1.0" mapstructure:"speaking_rate"`
 		Pitch                float32 `validate:"required,min=0" mod:"default=1.0"`
 	}
 }
+
+var app *application.Application
 
 // Call evaluates the predicate
 func (predicate *Predicate) Call(log zerolog.Logger) bool {
@@ -38,10 +42,13 @@ func (predicate *Predicate) Call(log zerolog.Logger) bool {
 		log.Error().Err(err).Msg("Unable to open google service account file")
 		return false
 	}
-	app, err := castApplication(p.Addr, p.Port)
-	if err != nil {
-		log.Error().Err(err).Msg("unable to get cast application")
-		return false
+	if app == nil {
+		// multi-thread safe?
+		app, err = castApplication(p.Addr, p.Port, p.ServerPort)
+		if err != nil {
+			log.Error().Err(err).Msg("unable to get cast application")
+			return false
+		}
 	}
 
 	data, err := tts.Create(p.TTS, b, p.LanguageCode, p.VoiceName, p.SpeakingRate, p.Pitch)

@@ -2,6 +2,8 @@ module github.com/jsautret/genapid
 
 go 1.16
 
+replace github.com/vishen/go-chromecast => /Users/jerome/src/go-chromecast
+
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
@@ -28,7 +30,7 @@ require (
 	github.com/rs/zerolog v1.20.0
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/vishen/go-chromecast v0.2.10-0.20210322235925-a2282f6c0015
+	github.com/vishen/go-chromecast v0.2.10-0.20210325213221-ac359eecd3f3
 	github.com/ybbus/jsonrpc v2.1.2+incompatible
 	golang.org/x/sys v0.0.0-20210324051608-47abb6519492 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b

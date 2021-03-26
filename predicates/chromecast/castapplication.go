@@ -67,7 +67,7 @@ func (e cachedDNSEntry) GetPort() int {
 	return e.Port
 }
 
-func castApplication(addr string, port int) (*application.Application, error) {
+func castApplication(addr string, castPort, serverPort int) (*application.Application, error) {
 	// TODO move to predicate parameters
 	deviceName := ""
 	disableCache := false
@@ -85,6 +85,7 @@ func castApplication(addr string, port int) (*application.Application, error) {
 	}
 
 	applicationOptions := []application.ApplicationOption{
+		application.WithServerPort(serverPort),
 		application.WithDebug(debug),
 		application.WithCacheDisabled(disableCache),
 	}
@@ -135,7 +136,7 @@ func castApplication(addr string, port int) (*application.Application, error) {
 			fmt.Printf("using device name=%s addr=%s port=%d uuid=%s\n", entry.GetName(), entry.GetAddr(), entry.GetPort(), entry.GetUUID())
 		}
 	} else {
-		p := port
+		p := castPort
 		entry = cachedDNSEntry{
 			Addr: addr,
 			Port: p,
