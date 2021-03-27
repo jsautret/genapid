@@ -10,9 +10,9 @@ import (
 	"github.com/go-playground/mold/v4"
 	"github.com/go-playground/mold/v4/modifiers"
 	"github.com/go-playground/validator/v10"
-	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/app/fileutils"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog"
 )
 
@@ -25,7 +25,7 @@ var (
 // Predicate is the interface of a predicate plugin
 type Predicate interface {
 	Name() string
-	Call(zerolog.Logger) bool
+	Call(zerolog.Logger, *ctx.Ctx) bool
 	Result() ctx.Result
 	Params() interface{}
 }

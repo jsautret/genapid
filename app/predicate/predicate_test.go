@@ -216,7 +216,7 @@ register: empty
 			// Register plugin
 			plugins.Add(p.Name(), func() genapid.Predicate { return &p })
 
-			p.On("Call", mock.Anything).Return(true)
+			p.On("Call", mock.Anything, mock.Anything).Return(true)
 			parsedConf := map[string]interface{}{}
 			p.On("Params").Return(&parsedConf)
 			if tc.expRegister != "" {

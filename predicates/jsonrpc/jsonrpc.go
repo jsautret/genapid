@@ -28,7 +28,7 @@ type Predicate struct {
 type basicAuth struct{ Username, Password string }
 
 // Call evaluates the predicate
-func (predicate *Predicate) Call(log zerolog.Logger) bool {
+func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	log = log.With().Str("procedure", p.Procedure).Logger()
 	opts := jsonrpc.RPCClientOpts{}

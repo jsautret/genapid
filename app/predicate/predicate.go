@@ -149,7 +149,7 @@ func processPredicate(log zerolog.Logger,
 	}
 
 	// Evaluate predicate
-	return o.p.Call(log)
+	return o.p.Call(log, c)
 }
 
 // Decode & store an option

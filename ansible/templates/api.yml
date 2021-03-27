@@ -1,4 +1,4 @@
-- name: "Validate that it's an incoming IFTTT request"
+- name: "Incoming IFTTT request"
   pipe:
   - name: Run only on IFTTT dedicated endpoint
     match:

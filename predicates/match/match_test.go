@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
-	"github.com/jsautret/genapid/app/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -153,7 +153,7 @@ fixed:  "value"
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {
 				assert.Equal(t,
-					tc.expResult, p.Call(log.Logger))
+					tc.expResult, p.Call(log.Logger, c))
 				if len(tc.expResults) > 0 {
 					assert.Equal(t, tc.expResults,
 						p.Result()["matches"], "mismatched groups")
@@ -197,7 +197,7 @@ func benchmark(b *testing.B, yaml string) {
 	for i := 0; i < b.N; i++ {
 		require.True(b,
 			genapid.InitPredicate(log.Logger, c, p, cfg))
-		p.Call(log.Logger)
+		p.Call(log.Logger, c)
 
 	}
 }

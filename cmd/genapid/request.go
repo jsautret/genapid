@@ -1,12 +1,10 @@
 package main
 
 import (
-	"io/ioutil"
-	"mime"
 	"net/http"
 
-	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/app/predicate"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,29 +13,15 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 	log.Debug().Str("http", "start").Str("path", r.URL.Path).
 		Msg("Processing HTTP request")
 
-	var err error
+	log.Trace().Interface("headers", r.Header).Msg("")
 
 	// Create & init context structures
 	url := &ctx.URL{
 		Params: r.URL.Query(),
 	}
-	contentType := r.Header.Get("Content-type")
-	m := ""
-	m, _, err = mime.ParseMediaType(contentType)
-	if err != nil {
-		log.Debug().Err(err).Msg("Ignoring Content-type")
-	} else {
-		log.Debug().Str("mime", m).Msg("Found Content-type")
-	}
-	var body []byte
-	if body, err = ioutil.ReadAll(r.Body); err != nil {
-		log.Debug().Err(err).Msg("Error reading body")
-	}
 	In := ctx.Request{
-		Req:  r,
-		URL:  url,
-		Mime: m,
-		Body: string(body),
+		Req: r,
+		URL: url,
 	}
 	c := ctx.New()
 	c.In = In

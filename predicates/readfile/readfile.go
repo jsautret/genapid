@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/jsautret/genapid/app/fileutils"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
-	"github.com/jsautret/genapid/app/fileutils"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -25,7 +25,7 @@ type Predicate struct {
 }
 
 // Call evaluates the predicate
-func (predicate *Predicate) Call(log zerolog.Logger) bool {
+func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	if p.YAML != "" {
 		log.Debug().Str("yaml", p.YAML).Msg("Reading file")

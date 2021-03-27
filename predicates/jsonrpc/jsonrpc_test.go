@@ -10,9 +10,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
-	"github.com/jsautret/genapid/app/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -129,7 +129,7 @@ basic_auth:
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {
 				assert.Equal(t,
-					tc.expected, p.Call(log.Logger))
+					tc.expected, p.Call(log.Logger, c))
 			}
 		})
 

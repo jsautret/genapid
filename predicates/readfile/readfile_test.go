@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
-	"github.com/jsautret/genapid/app/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -112,7 +112,7 @@ json: testdata/test1.json
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {
 				assert.Equal(t,
-					tc.expResult, p.Call(log.Logger), "predicate result")
+					tc.expResult, p.Call(log.Logger, c), "predicate result")
 				if diff := deep.Equal(tc.expResults, p.Result()["content"]); diff != nil {
 					t.Log(diff)
 				}

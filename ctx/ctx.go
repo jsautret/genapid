@@ -49,12 +49,6 @@ type Request struct {
 
 	// Imcoming URL info
 	URL *URL
-
-	// Mime type of body
-	Mime string
-
-	// Content of body
-	Body string
 }
 
 // Registered stores results resgistered by a predicate

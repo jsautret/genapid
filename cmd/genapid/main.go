@@ -26,7 +26,7 @@ var (
 
 // Command line flags definitions
 func init() {
-	flag.StringVar(&configFileName, "config", "route.yml", "Config file")
+	flag.StringVar(&configFileName, "config", "api.yml", "Config file")
 	flag.StringVar(&SLogLevel, "loglevel", "info", "Log level")
 	flag.IntVar(&port, "port", 9110, "Listening port")
 }
@@ -34,7 +34,7 @@ func init() {
 // Main handler for incoming requests
 func handler(w http.ResponseWriter, r *http.Request) {
 	if !process(w, r) {
-		w.WriteHeader(http.StatusNotFound)
+		//w.WriteHeader(http.StatusNotFound)
 	}
 }
 

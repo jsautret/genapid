@@ -33,7 +33,7 @@ type Predicate struct {
 var app *application.Application
 
 // Call evaluates the predicate
-func (predicate *Predicate) Call(log zerolog.Logger) bool {
+func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	log.Debug().Str("tts", p.TTS).Msg("")
 

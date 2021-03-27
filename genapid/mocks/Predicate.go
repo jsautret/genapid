@@ -15,13 +15,13 @@ type Predicate struct {
 	mock.Mock
 }
 
-// Call provides a mock function with given fields: _a0
-func (_m *Predicate) Call(_a0 zerolog.Logger) bool {
-	ret := _m.Called(_a0)
+// Call provides a mock function with given fields: _a0, _a1
+func (_m *Predicate) Call(_a0 zerolog.Logger, _a1 *ctx.Ctx) bool {
+	ret := _m.Called(_a0, _a1)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(zerolog.Logger) bool); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(zerolog.Logger, *ctx.Ctx) bool); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}

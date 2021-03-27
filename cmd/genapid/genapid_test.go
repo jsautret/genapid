@@ -38,7 +38,7 @@ func TestFullConf(t *testing.T) {
 			name:       "EmptyConf",
 			method:     http.MethodGet,
 			path:       "/EmptyConf",
-			statusCode: http.StatusNotFound,
+			statusCode: http.StatusOK,
 			conf:       "",
 		},
 		{
@@ -87,11 +87,19 @@ func TestFullConf(t *testing.T) {
   - match:
       string: =In.URL.Params.param1[0]
       regexp: value[1-9]
+  - body:
+      mime: application/json
+      type: json
+    register: body
   - match:
-      string: =In.Mime
-      fixed: application/json
+      string: =R.body.payload.bodyName
+      fixed: bodyValue
+  - body:
+      mime: application/json
+      type: json
+    register: body2
   - match:
-      string: =jsonpath("$.bodyName", In.Body)
+      string: =R.body2.payload.bodyName
       fixed: bodyValue
   - log:
       msg: EndIncomingHttpMatching
@@ -160,7 +168,7 @@ func TestFullConf(t *testing.T) {
 			name:       "InvalidPredicate",
 			method:     http.MethodGet,
 			path:       "/InvalidPredicate",
-			statusCode: http.StatusNotFound,
+			statusCode: http.StatusOK,
 			logFound: expLog{
 				{"log": "start"},
 				{"error": "Unknown predicate 'invalid'"},
@@ -181,7 +189,7 @@ func TestFullConf(t *testing.T) {
 			name:        "StopPipe",
 			method:      http.MethodGet,
 			path:        "/Stop",
-			statusCode:  http.StatusNotFound,
+			statusCode:  http.StatusOK,
 			logFound:    expLog{{"log": "endPipe"}},
 			logNotFound: expLog{{"log": "NotExecuted"}},
 			conf: `

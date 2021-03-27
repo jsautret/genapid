@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
-	"github.com/jsautret/genapid/app/conf"
 	"github.com/kr/pretty"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -268,7 +268,7 @@ response: json
 				t.Cleanup(srv.Close)
 				assert.Nil(t, setHostURL(p, srv.URL))
 				assert.Equal(t,
-					tc.expected, p.Call(log), "predicate result")
+					tc.expected, p.Call(log, c), "predicate result")
 				assert.Equal(t, tc.expRes, p.Result()["response"], "bad response")
 				assert.Equal(t, http.StatusOK, p.Result()["code"], "bad code")
 			}

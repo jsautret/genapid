@@ -24,7 +24,7 @@ type Predicate struct {
 }
 
 // Call evaluates the predicate
-func (predicate *Predicate) Call(log zerolog.Logger) bool {
+func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	log.Debug().Str("string", p.String).Msg("")
 	if p.Fixed != "" {

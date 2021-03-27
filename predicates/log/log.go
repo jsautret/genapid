@@ -20,7 +20,7 @@ type Predicate struct {
 }
 
 // Call evaluates a predicate
-func (predicate *Predicate) Call(log zerolog.Logger) bool {
+func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	log.Info().Str("log", fmt.Sprintf("%v", predicate.params.Msg)).Msg("")
 
 	return true
