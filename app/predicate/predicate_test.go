@@ -70,76 +70,76 @@ test2:
 `,
 		},
 		{
-			name:         "set",
-			expPredicate: "test_set",
+			name:         "variable",
+			expPredicate: "test_variable",
 			expResult:    true,
 			expVars: ctx.Variables{
 				"v1": "val1",
 				"v2": "val2",
 			},
 			conf: `
-set:
+variable:
   - v1: val1
   - v2: val2
 `,
 		},
 		{
-			name:         "setWhenTrue",
-			expPredicate: "test_set",
+			name:         "variableWhenTrue",
+			expPredicate: "test_variable",
 			expResult:    true,
 			expVars: ctx.Variables{
 				"v1": "val1",
 				"v2": "val2",
 			},
 			conf: `
-set:
+variable:
   - v1: val1
   - v2: val2
 when: =true
 `,
 		},
 		{
-			name:         "setWhenFalse",
-			expPredicate: "test_set",
+			name:         "variableWhenFalse",
+			expPredicate: "test_variable",
 			expResult:    true,
 			expVars:      ctx.Variables{},
 			conf: `
-set:
+variable:
   - v1: val1
   - v2: val2
 when: =false
 `,
 		},
 		{
-			name:         "setAndPredicate",
-			expPredicate: "test_set",
+			name:         "variableAndPredicate",
+			expPredicate: "test_variable",
 			expResult:    false,
 			conf: `
-test_set:
+test_variable:
   key: value
-set:
+variable:
   - v1: val1
   - v2: val2
 `,
 		},
 		{
-			name:         "setAndDefault",
-			expPredicate: "test_set",
+			name:         "variableAndDefault",
+			expPredicate: "test_variable",
 			expResult:    false,
 			conf: `
 default:
   key: value
-set:
+variable:
   - v1: val1
   - v2: val2
 `,
 		},
 		{
-			name:         "defaultAndSet",
-			expPredicate: "test_set",
+			name:         "defaultAndVariable",
+			expPredicate: "test_variable",
 			expResult:    false,
 			conf: `
-set:
+variable:
   - v1: val1
   - v2: val2
 default:
@@ -148,7 +148,7 @@ default:
 		},
 		{
 			name:         "default",
-			expPredicate: "test_set",
+			expPredicate: "test_variable",
 			expDef:       ctx.Default{"test_default": ctx.DefaultParams{"key": "value"}},
 			expResult:    true,
 			conf: `

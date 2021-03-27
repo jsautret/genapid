@@ -17,13 +17,13 @@ type pOptions struct {
 	register, name, result, when string
 	p                            genapid.Predicate
 	pipe                         conf.Pipe
-	set                          []map[string]interface{}
+	variable                     []map[string]interface{}
 	def                          ctx.DefaultParams
 }
 
 func (o pOptions) hasPredicate() bool {
 	return o.p != nil || o.pipe.Pipe != nil ||
-		len(o.set) != 0 || len(o.def) != 0
+		len(o.variable) != 0 || len(o.def) != 0
 }
 
 // Read all options and predicate or pipe
@@ -48,8 +48,8 @@ func getOptions(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) (*pOptions,
 			if !assignOption(log, "when", &o.when, node) {
 				return nil, false
 			}
-		case "set":
-			if !assignSet(log, &o, node) {
+		case "variable":
+			if !assignVariable(log, &o, node) {
 				return nil, false
 			}
 		case "default":
@@ -90,8 +90,8 @@ func Process(log zerolog.Logger, cfg *conf.Predicate, c *ctx.Ctx) bool {
 		}
 	}
 
-	if len(o.set) > 0 {
-		return processSet(log, o, c)
+	if len(o.variable) > 0 {
+		return processVariable(log, o, c)
 	}
 	if len(o.def) > 0 {
 		return processDefault(log, o, c)
@@ -165,40 +165,40 @@ func assignOption(log zerolog.Logger, name string, option *string, n yaml.Node) 
 	return true
 }
 
-func assignSet(log zerolog.Logger, o *pOptions, n yaml.Node) bool {
-	log = log.With().Str("predicate", "set").Logger()
-	if o.set != nil {
-		log.Error().Err(errors.New("Several 'set' declared")).Msg("")
+func assignVariable(log zerolog.Logger, o *pOptions, n yaml.Node) bool {
+	log = log.With().Str("predicate", "variable").Logger()
+	if o.variable != nil {
+		log.Error().Err(errors.New("Several 'variable' declared")).Msg("")
 		return false
 	}
 	if o.hasPredicate() {
-		log.Error().Err(errors.New("'set' declared with another predicate")).Msg("")
+		log.Error().Err(errors.New("'variable' declared with another predicate")).Msg("")
 		return false
 	}
 	var args []map[string]interface{}
 	if err := n.Decode(&(args)); err != nil {
-		log.Error().Err(err).Msg("'set' parameters must be a dict")
+		log.Error().Err(err).Msg("'variable' parameters must be a dict")
 		return false
 	}
-	o.set = args
+	o.variable = args
 	return true
 }
 
-// Store variable values set by 'set' option
-func processSet(log zerolog.Logger, o *pOptions, c *ctx.Ctx) bool {
-	log = log.With().Str("predicate", "set").Logger()
-	for i := 0; i < len(o.set); i++ {
-		for k := range o.set[i] {
+// Store variable values set by 'variable' option
+func processVariable(log zerolog.Logger, o *pOptions, c *ctx.Ctx) bool {
+	log = log.With().Str("predicate", "variable").Logger()
+	for i := 0; i < len(o.variable); i++ {
+		for k := range o.variable[i] {
 			var field map[string]interface{}
 			arg := make(map[string]interface{})
-			arg[k] = o.set[i][k]
+			arg[k] = o.variable[i][k]
 			if !conf.GetParams(c, arg, &field) {
 				log.Error().
 					Err(fmt.Errorf("Invalid value for %v", k)).
 					Msg("")
 				return false
 			}
-			log.Trace().Msgf("set %v='%v'", k, field[k])
+			log.Trace().Msgf("variable %v='%v'", k, field[k])
 			c.V[k] = field[k]
 		}
 	}

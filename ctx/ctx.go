@@ -16,7 +16,7 @@ type Ctx struct {
 	// Default predicates values, set by 'default' predicate
 	Default Default
 
-	// Variables set by the 'set' option
+	// Variables set by the 'variable' option
 	V Variables
 
 	// Results registered by previous predicates, using the
@@ -57,7 +57,7 @@ type Registered map[string]Result
 // Result is the type data returned by predicates
 type Result map[string]interface{}
 
-// Variables set by the 'set' option
+// Variables set by the 'variable' option
 type Variables map[string]interface{}
 
 // Default stores predicates values, set by 'default' predicate

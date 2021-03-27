@@ -28,7 +28,7 @@ It can be used to process Webhooks, add some custom commands to a Google Home or
                 - [`register`](#register)
                 - [`when`](#when)
             - [Special predicates](#special-predicates)
-                - [`set`](#set)
+                - [`variable`](#variable)
                 - [`default`](#default)
         - [Expressions](#expressions)
             - [`R`](#r)
@@ -39,13 +39,17 @@ It can be used to process Webhooks, add some custom commands to a Google Home or
 
 ## Concept
 
-The API is described using **pipes** of **predicates**. All predicates in a pipe are evaluated as long as they are true. When a predicate is false, the predicates in the next pipe are evaluated. Some predicates can have side effects, like calling an external API, to perform actual actions.
+The API is described using **pipes** of **predicates**. All predicates
+in a pipe are evaluated as long as they are true. When a predicate is
+false, the predicates in the next pipe are evaluated. Some predicates
+can have side effects, like calling an external API, to perform actual
+actions.
 
 ## Examples
 
 ### Controlling Kodi with Google Assistant
 
-Control Kodi by voice using a Google Home:
+* Control Kodi by voice using a Google Home:
 [examples/kodi/](examples/kodi/)
 
 ## Install
@@ -60,7 +64,8 @@ $ go get -u github.com/jsautret/genapid
 
 ### Ansible
 
-If you use Ansible, you can adapt the role in [ansible/](ansible/) to deploy genapid behind an Apache server.
+If you use Ansible, you can adapt the role in [ansible/](ansible/) to
+deploy genapid behind an Apache server.
 
 ## Run
 
@@ -76,17 +81,22 @@ $ Usage of ./cmd/genapid/genapid:
 
 ## Configuration
 
-The API is described in a YAML file, which passed to genapid using the `-config` option.
+The API is described in a YAML file, which passed to genapid using the
+`-config` option.
 
 ### pipe
 
-The API description file is a list of `pipe` elements. Each `pipe` is a list of predicates or sub-pipes. Only the `name` and `result` options can be used on `pipe` (see below for the description of options).
+The API description file is a list of `pipe` elements. Each `pipe` is
+a list of predicates or sub-pipes. Only the `name` and `result`
+options can be used on `pipe` (see below for the description of
+options).
 
 The result of a `pipe`is always true, unless `result` option is set.
 
 ### Predicates
 
-The list of predicates is in [predicates/](predicates/). There is also some additional predicates described below.
+The list of predicates is in [predicates/](predicates/). There is also
+some additional predicates described below.
 
 Each predicates has it own specific parameters described in it documentation.
 
@@ -110,7 +120,14 @@ Force the value of the predicate
 
 Type string
 
-Store the results set by the predicate. This data can be accessed in following predicates with the `R` map. For example, if you set option `register: myresult`, the data set by the predicate can then be accessed with `R.myresult` which is a map. The `result` key will contain the boolean result of the predicate (real one, not the one set with the `result`option). So `R.myresult.result` can be used to check the result of the predicate. Some predicate may provide additional fields described in their documentation.
+Store the results set by the predicate. This data can be accessed in
+following predicates with the `R` map. For example, if you set option
+`register: myresult`, the data set by the predicate can then be
+accessed with `R.myresult` which is a map. The `result` key will
+contain the boolean result of the predicate (real one, not the one set
+with the `result`option). So `R.myresult.result` can be used to check
+the result of the predicate. Some predicate may provide additional
+fields described in their documentation.
 
 ##### `when`
 Type: boolean
@@ -119,18 +136,21 @@ If false, the predicate evaluation is skipped.
 
 #### Special predicates
 
-##### `set`
-Used to set variables. The variables can be accessed in following predicates with the `V` map. It takes a list of map as parameters.
+##### `variable`
+Used to set variables. The variables can be accessed in following
+predicates with the `V` map. It takes a list of map as parameters.
 
 Example:
 ``` yaml
-set:
+variable:
  - variable1: value1
  - variable2: value2
 ```
 
 ##### `default`
-Used to set default parameters for the following predicates. Expressions are evaluated when the predicate is evaluated, not when `default` is evaluated.
+Used to set default parameters for the following
+predicates. Expressions are evaluated when the predicate is evaluated,
+not when `default` is evaluated.
 
 Example:
 ``` yaml
@@ -142,7 +162,10 @@ default:
 
 ### Expressions
 
-If the value of the  parameter of a predicate starts with an = (equal sign), it will be evaluated as a [Gval expression](https://github.com/PaesslerAG/gval). If the evaluation of an expression fails, the predicate returns false.
+If the value of the parameter of a predicate starts with an = (equal
+sign), it will be evaluated as a [Gval
+expression](https://github.com/PaesslerAG/gval). If the evaluation of
+an expression fails, the predicate returns false.
 
 The Following data is accessible in those expressions:
 
@@ -152,11 +175,12 @@ Map containing data stored using the `register` option.
 
 #### `V`
 
-Map containing variables set by the `set` predicate.
+Map containing variables set by the `variable` predicate.
 
 #### `In`
 
-Map containing information about the incoming request received by genapid. It has the following fields:
+Map containing information about the incoming request received by
+genapid. It has the following fields:
 
 * `URL.Params`: Map containing the URL query parameters.
 * `Mime`: Content-Type

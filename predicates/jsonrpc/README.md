@@ -4,20 +4,20 @@ The `jsonrpc` predicate does an JSONRPC request.
 
 ## Options
 
-Option | Required | Description
----|---|---
-`url` | yes | URL of API
-`procedure` | yes | JSONRPC procedure
-`params` | | params of the procedure
-`basic_auth` | | set basic_auth.username & basic_auth.password
+| Option       | Required | Description                                   |
+| ---          | ---      | ---                                           |
+| `url`        | yes      | URL of API                                    |
+| `procedure`  | yes      | JSONRPC procedure                             |
+| `params`     |          | params of the procedure                       |
+| `basic_auth` |          | set basic_auth.username & basic_auth.password |
 
 
 ## Results
 
-Field | Type | Description
----|---|---
-`result` | boolean | true if request was done successfully
-`response` | struct | result of the procedure
+| Field      | Type    | Description                           |
+| ---        | ---     | ---                                   |
+| `result`   | boolean | true if request was done successfully |
+| `response` | struct  | result of the procedure               |
 
 ## Example:
 

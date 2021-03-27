@@ -1,6 +1,7 @@
 # body
 
-The `body` predicate checks the Content-Type of the incoming request and/or parse its body.
+The `body` predicate checks the Content-Type of the incoming request
+and/or parse its body.
 
 ## Options
 

@@ -25,7 +25,7 @@
       yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
     register: strings
   - name: Voices for TTS
-    set:
+    variable:
       - voices: # https://cloud.google.com/text-to-speech/docs/voices
           fr:
             - fr-FR
@@ -159,7 +159,7 @@
       register: tvshows
 
     - name: Get the tvshowid using a fuzzy search on all tvshows titles
-      set:
+      variable:
         # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.tvshows.response | $.tvshows[*].label'
         # get best matching title
@@ -184,7 +184,7 @@
       register: episodes
 
     - name: Get a list of only unwatched episodes
-      set:
+      variable:
         - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
         - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
 
@@ -222,7 +222,7 @@
       register: songs
 
     - name: Get the song ID using a fuzzy search on all titles
-      set:
+      variable:
           # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.songs.response | $.songs[*].label'
           # get best matching title
@@ -272,7 +272,7 @@
       register: albums
 
     - name: Get the album ID using a fuzzy search on all titles
-      set:
+      variable:
           # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.albums.response | $.albums[*].label'
           # get best matching title
@@ -324,7 +324,7 @@
       register: artists
 
     - name: Get the artist ID using a fuzzy search on all artists
-      set:
+      variable:
           # get artists from Kodi response with a jsonpath expression
         - artists:  '= R.artists.response | $.artists[*].label'
           # get best matching artist
@@ -376,7 +376,7 @@
       register: genres
 
     - name: Get the genre ID using a fuzzy search on all genres
-      set:
+      variable:
           # get genres from Kodi response with a jsonpath expression
         - genres:  '= R.genres.response | $.genres[*].label'
           # get best matching genre
@@ -429,7 +429,7 @@
       register: movies
 
     - name: Get the movie ID using a fuzzy search on all titles
-      set:
+      variable:
           # get titles from Kodi response with a jsonpath expression
         - titles:  '= R.movies.response | $.movies[*].label'
           # get best matching title
