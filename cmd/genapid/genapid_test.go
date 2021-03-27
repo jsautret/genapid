@@ -110,7 +110,10 @@ func TestFullConf(t *testing.T) {
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
 			statusCode: http.StatusOK,
-			logFound:   expLog{{"log": "EndDefaultFields"}},
+			logFound: expLog{
+				{"log": "SubPipe"},
+				{"log": "EndDefaultFields"},
+			},
 			conf: `
 - name: "Test DefaultFields"
   pipe:
@@ -122,6 +125,14 @@ func TestFullConf(t *testing.T) {
   - match:
       string:  CCCCC
       value:  CCCCC
+  - pipe:
+    - default:
+        match:
+          string: FFFFF
+    - match:
+        value: FFFFF
+    - log:
+        msg: SubPipe
   - match:
       regexp: D+
   - default:
