@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/jsautret/genapid/app/fileutils"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/genapid/genapid"
 	"github.com/rs/zerolog"
@@ -29,7 +28,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	if p.YAML != "" {
 		log.Debug().Str("yaml", p.YAML).Msg("Reading file")
-		y, err := ioutil.ReadFile(fileutils.Path(p.YAML))
+		y, err := ioutil.ReadFile(p.YAML)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return false
@@ -44,7 +43,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	}
 	if p.JSON != "" {
 		log.Debug().Str("json", p.JSON).Msg("Reading file")
-		j, err := ioutil.ReadFile(fileutils.Path(p.JSON))
+		j, err := ioutil.ReadFile(p.JSON)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return false
