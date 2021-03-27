@@ -1,22 +1,26 @@
-- name: "Validate that it's an incoming IFTTT request"
+# Set the IFTTT webhook with something like
+# http://yourdomain:port/ifttt/broker?phrase={{TextField}}&lang=en
+
+- name: "Incoming IFTTT request"
   pipe:
-  - name: Run only on IFTTT dedicated endpoint
+  - name: IFTTT dedicated endpoint
     match:
       string: =In.Req.URL.Path
       fixed: /ifttt
-  - name: must be HTTP POST
+  - name: Must be HTTP POST
     match:
       string: =In.Req.Method
       fixed: POST
-  - name: Body must be json
+  - name: Parse JSON body
+    body:
+      mime: application/json
+      type: json
+    register: body
+  - name: JSON payload must contain the token set in IFTTT
     match:
-      string: =In.Mime
-      fixed: application/json
-  - name: body must be a json object that contains the token set in IFTTT
-    match:
-      string: = jsonpath("$.token", In.Body)
-      fixed: abcd
-  - name: Read strings corresponding to language param
+      string: = R.body.payload.token
+      fixed: secretToken
+  - name: Read strings corresponding to lang param
     readfile:
       yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
     register: strings
@@ -29,7 +33,8 @@
           en:
             - en-US
             - en-US-Standard-G
-  - name: Set default values for match & jsonrcp
+
+  - name: Set default values
     default:
       match: # Phrase from Google Assistant sent by IFTTT
         string: = In.URL.Params.phrase[0]
@@ -37,7 +42,7 @@
         url: http://192.168.0.32:8080/jsonrpc
         basic_auth:
           username: kodi
-          password: ghghpczyuq
+          password: mykodipasswd
       chromecast: # Used to give feedback to commands
         # Google Home IP addr
         addr: 192.168.3.9
