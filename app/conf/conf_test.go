@@ -13,9 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.FatalLevel
-
-//var logLevel = zerolog.TraceLevel
+var logLevel = zerolog.InfoLevel
 
 type params struct {
 	S1, S2 string
@@ -163,6 +161,24 @@ s1: '=upper("aB2c,d")'
 `,
 			expected: params{
 				S1: "AB2C,D",
+			},
+		},
+		{
+			name: "hmacSha1",
+			conf: `
+s1: '=hmacSha1("key", "value")'
+`,
+			expected: params{
+				S1: "57443a4c052350a44638835d64fd66822f813319",
+			},
+		},
+		{
+			name: "hmacSha256",
+			conf: `
+s1: '=hmacSha256("key", "value")'
+`,
+			expected: params{
+				S1: "90fbfcf15e74a36b89dbdb2a721d9aecffdfdddc5c83e27f7592594f71932481",
 			},
 		},
 		{

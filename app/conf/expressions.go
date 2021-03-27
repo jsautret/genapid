@@ -2,6 +2,10 @@ package conf
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,7 +27,8 @@ func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 		return gval.Evaluate(s[1:], c,
 			jsonpath.Language(), jsonpathFunction(),
 			pipeOperator(), fuzzyFunction(), formatFunction(),
-			lenFunction(), upperFunction())
+			lenFunction(), upperFunction(), hmacSha256Function(),
+			hmacSha1Function())
 	}
 	return s, nil
 }
@@ -191,7 +196,7 @@ func lenFunction() gval.Language {
 	})
 }
 
-// Add a format(string, parameters...) function to Gval
+// Add a upper(string, parameters...) function to Gval
 func upperFunction() gval.Language {
 	return gval.Function("upper", func(arguments ...interface{}) (interface{}, error) {
 		if len(arguments) != 1 {
@@ -202,5 +207,51 @@ func upperFunction() gval.Language {
 			return nil, errors.New("upper() expects string as argument")
 		}
 		return strings.ToUpper(s), nil
+	})
+}
+
+// Add a hmacSha256(string, parameters...) function to Gval
+func hmacSha256Function() gval.Language {
+	return gval.Function("hmacSha256", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 2 {
+			return nil, errors.New("hmacSha256() expects exactly two arguments")
+		}
+		k, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("hmacSha256() expects string as arguments")
+		}
+		d, ok := arguments[1].(string)
+		if !ok {
+			return nil, errors.New("hmacSha256() expects string as arguments")
+		}
+
+		h := hmac.New(sha256.New, []byte(k))
+		if _, err := h.Write([]byte(d)); err != nil {
+			return nil, errors.New("hmacSha256() cannot write hash")
+		}
+		return hex.EncodeToString(h.Sum(nil)), nil
+	})
+}
+
+// Add a hmacSha1(string, parameters...) function to Gval
+func hmacSha1Function() gval.Language {
+	return gval.Function("hmacSha1", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 2 {
+			return nil, errors.New("hmacSha1() expects exactly two arguments")
+		}
+		k, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("hmacSha1() expects string as arguments")
+		}
+		d, ok := arguments[1].(string)
+		if !ok {
+			return nil, errors.New("hmacSha1() expects string as arguments")
+		}
+
+		h := hmac.New(sha1.New, []byte(k))
+		if _, err := h.Write([]byte(d)); err != nil {
+			return nil, errors.New("hmacSha1() cannot write hash")
+		}
+		return hex.EncodeToString(h.Sum(nil)), nil
 	})
 }
