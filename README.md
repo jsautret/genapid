@@ -60,7 +60,7 @@ $ go get -u github.com/jsautret/genapid
 
 ### Ansible
 
-If you use Ansible, you can adapt the role in [Ansible/](Ansible/) to deploy genapid behind an Apache server.
+If you use Ansible, you can adapt the role in [ansible/](ansible/) to deploy genapid behind an Apache server.
 
 ## Run
 

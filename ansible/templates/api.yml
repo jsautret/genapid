@@ -3,19 +3,19 @@
   - name: Run only on IFTTT dedicated endpoint
     match:
       string: =In.Req.URL.Path
-      fixed: /ifttt
+      value: /ifttt
   - name: must be HTTP GET
     match:
       string: =In.Req.Method
-      fixed: GET
+      value: GET
   - name: Body must be json
     match:
       string: =In.Mime
-      fixed: application/json
+      value: application/json
   - name: body must be a json object that contains the token set in IFTTT
     match:
       string: = jsonpath("$.token", In.Body)
-      fixed: {{genapid_ifttt_token}}
+      value: {{genapid_ifttt_token}}
   - name: Read strings corresponding to language param
     readfile:
       yaml: '="{{genapid_conf|dirname}}/kodi."+In.URL.Params.lang[0]+".yml"'

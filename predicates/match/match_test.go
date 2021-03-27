@@ -35,7 +35,7 @@ func TestMatch(t *testing.T) {
 			name:         "NoString",
 			invalidParam: true,
 			conf: `
-fixed: ABCD
+value: ABCD
 `,
 		},
 		{
@@ -46,35 +46,35 @@ string: ABCD
 			invalidParam: true,
 		},
 		{
-			name: "FixedRegexp",
+			name: "ValueRegexp",
 			conf: `
 string: ABCD
-fixed: ABCD
+value: ABCD
 regexp: ABCD
 `,
 			invalidParam: true,
 		},
 		{
-			name: "FixedMatched",
+			name: "ValueMatched",
 			conf: `
 string: "ABCD"
-fixed: ABCD
+value: ABCD
 `,
 			expResult: true,
 		},
 		{
-			name: "FixedNotMatched",
+			name: "ValueNotMatched",
 			conf: `
 string: "ABCDE"
-fixed: ABCD
+value: ABCD
 `,
 			expResult: false,
 		},
 		{
-			name: "EmptyFixed",
+			name: "EmptyValue",
 			conf: `
 string: ""
-fixed: ""
+value: ""
 `,
 			invalidParam: true,
 		},
@@ -127,7 +127,7 @@ regexp: ^(?P<r>R+)(T+)S*(?P<y>Y+)$
 			name: "GVal",
 			conf: `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
-fixed:  "WWWWAA"
+value:  "WWWWAA"
 `,
 			expResult: true,
 		},
@@ -135,7 +135,7 @@ fixed:  "WWWWAA"
 			name: "jsonpath",
 			conf: `
 string: '= {"name": "value"}| $.name'
-fixed:  "value"
+value:  "value"
 `,
 			expResult: true,
 		},
@@ -176,7 +176,7 @@ fixed:  "value"
 func BenchmarkNoGval(b *testing.B) {
 	yaml := `
 string: AAAAAA
-fixed:  AAAAAA
+value:  AAAAAA
 `
 	benchmark(b, yaml)
 }
@@ -184,7 +184,7 @@ fixed:  AAAAAA
 func BenchmarkWithGval(b *testing.B) {
 	yaml := `
 string: '= ( 42 < 8 ? "AAAA" : "WWWW") + "AA"'
-fixed:  "WWWWAA"
+value:  "WWWWAA"
 `
 	benchmark(b, yaml)
 }

@@ -52,17 +52,17 @@ func TestFullConf(t *testing.T) {
   pipe:
   - match:
       string:  AAAAAA
-      fixed:  "AAAAAA"
+      value:  "AAAAAA"
   - match:
       string:  ="CCCCC"
-      fixed:  CCCCC
+      value:  CCCCC
   - match:
       string: '=(-1<0 ? "BBBAAABBB" : "BBBBB")'
       regexp: "B(A+B)B"
     register: some_test
   - match:
       string: =R.some_test.matches[1]
-      fixed: AAAB
+      value: AAAB
   - log:
       msg: EndPipeOfMatch
 `,
@@ -80,10 +80,10 @@ func TestFullConf(t *testing.T) {
   pipe:
   - match:
       string: =In.Req.Method
-      fixed: POST
+      value: POST
   - match:
       string: =In.URL.Params.param2[0]
-      fixed: value2
+      value: value2
   - match:
       string: =In.URL.Params.param1[0]
       regexp: value[1-9]
@@ -93,14 +93,14 @@ func TestFullConf(t *testing.T) {
     register: body
   - match:
       string: =R.body.payload.bodyName
-      fixed: bodyValue
+      value: bodyValue
   - body:
       mime: application/json
       type: json
     register: body2
   - match:
       string: =R.body2.payload.bodyName
-      fixed: bodyValue
+      value: bodyValue
   - log:
       msg: EndIncomingHttpMatching
 `,
@@ -118,20 +118,20 @@ func TestFullConf(t *testing.T) {
       match:
         string: DDDDDD
   - match:
-      fixed:  "DDDDDD"
+      value:  "DDDDDD"
   - match:
       string:  CCCCC
-      fixed:  CCCCC
+      value:  CCCCC
   - match:
       regexp: D+
   - default:
       match:
         string: EEEEEE
   - match:
-      fixed: EEEEEE
+      value: EEEEEE
   - default:
       match:
-        fixed: EEEEEE
+        value: EEEEEE
   - match:
   - log:
       msg: EndDefaultFields
@@ -152,14 +152,14 @@ func TestFullConf(t *testing.T) {
   - name: subPipe1
     pipe:
     - match:
-        fixed:  imbricated
+        value:  imbricated
     - match:
         string: A
-        fixed: B
+        value: B
   # top-level pipe will continue
   # even if predicate fails in sub-pipe
   - match:
-      fixed: imbricated
+      value: imbricated
   - log:
       msg: EndImbricatedPipes
 `,
@@ -202,7 +202,7 @@ func TestFullConf(t *testing.T) {
     pipe:
     - match:
         string: stop
-        fixed: stop
+        value: stop
     - log:
         msg: endPipe
     result: =false
@@ -294,14 +294,14 @@ func BenchmarkNoGval(b *testing.B) {
   pipe:
   - match:
       string: "AAAAAA"
-      fixed:  "AAAAAA"
+      value:  "AAAAAA"
   - match:
       string: "BBBAAABBB"
       regexp: "B(A+B)B"
     register: some_test
   - match:
       string: "AAAB"
-      fixed: AAAB
+      value: AAAB
 `
 	zerolog.SetGlobalLevel(logLevel)
 	config = getConfB(b, conf)
@@ -318,14 +318,14 @@ func BenchmarkWithGval(b *testing.B) {
   pipe:
   - match:
       string: ="AAAAAA"
-      fixed:  "AAAAAA"
+      value:  "AAAAAA"
   - match:
       string: '= (-2 < -1 ? "BBBAAABBB" : "BBBBB" )'
       regexp: "B(A+B)B"
     register: some_test
   - match:
       string: '= R.some_test.matches[1]'
-      fixed: AAAB
+      value: AAAB
 `
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
 	config = getConfB(b, conf)

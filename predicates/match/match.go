@@ -17,8 +17,8 @@ type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
 		String string `validate:"required"`
-		Fixed  string `validate:"required_without=Regexp,excluded_with=Regexp"`
-		Regexp string `validate:"required_without=Fixed,excluded_with=Fixed"`
+		Value  string `validate:"required_without=Regexp,excluded_with=Regexp"`
+		Regexp string `validate:"required_without=Value,excluded_with=Value"`
 	}
 	results ctx.Result // result of regexp match
 }
@@ -27,9 +27,9 @@ type Predicate struct {
 func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 	log.Debug().Str("string", p.String).Msg("")
-	if p.Fixed != "" {
-		log.Debug().Str("fixed", p.Fixed).Msg("")
-		return p.Fixed == p.String
+	if p.Value != "" {
+		log.Debug().Str("value", p.Value).Msg("")
+		return p.Value == p.String
 	}
 	if p.Regexp != "" {
 		log.Debug().Str("regexp", p.Regexp).Msg("")
@@ -59,7 +59,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 		return true
 	}
 	// validate should prevent reaching this point
-	log.Error().Err(errors.New("Missing one of 'fixed' or 'regexp'")).Msg("")
+	log.Error().Err(errors.New("Missing one of 'value' or 'regexp'")).Msg("")
 	return false
 }
 
