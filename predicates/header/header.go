@@ -16,20 +16,27 @@ type Predicate struct {
 		Name  string `validate:"required"`
 		Value string
 	}
+	result ctx.Result // value of header
 }
 
 // Call evaluates the predicate
 func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 
-	return c.In.Req.Header.Get(p.Name) == p.Value
+	v := c.In.Req.Header.Get(p.Name)
+	log.Debug().Str("value", v).Msg("")
+	predicate.result = ctx.Result{"value": v}
+	if p.Value != "" {
+		return v == p.Value
+	}
+	return true
 }
 
 // Generic interface //
 
 // Result returns data set by the predicate
 func (predicate *Predicate) Result() ctx.Result {
-	return ctx.Result{}
+	return predicate.result
 }
 
 // Name returns the name of the predicate

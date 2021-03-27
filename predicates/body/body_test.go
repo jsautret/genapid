@@ -19,7 +19,7 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-func TestHTTP(t *testing.T) {
+func TestBody(t *testing.T) {
 	cases := []struct {
 		name         string
 		conf         string

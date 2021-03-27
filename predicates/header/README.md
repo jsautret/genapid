@@ -1,6 +1,6 @@
 # header
 
-The `header` predicate checks the value of a predicate.
+The `header` predicate checks the value of a predicate and/or gets it value
 
 ## Options
 
@@ -11,6 +11,7 @@ The `header` predicate checks the value of a predicate.
 
 ## Results
 
-| Field    | Type    | Description            |
-| ---      | ---     | ---                    |
-| `result` | boolean | true is header matches |
+| Field    | Type    | Description                                               |
+| ---      | ---     | ---                                                       |
+| `result` | boolean | true if value is not set, or true if value matches header |
+| `value`  | string  | Value of header                                           |
