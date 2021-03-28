@@ -1,6 +1,6 @@
 module github.com/jsautret/genapid
 
-go 1.16
+go 1.14
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
