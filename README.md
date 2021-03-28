@@ -63,13 +63,21 @@ Control Kodi by voice using a Google Home and receive voice feedback:
 
 ## Install
 
-### Compilation
+### Binary releases
+
+Binary execs for various platforms are available here:
+
+https://github.com/jsautret/genapid/releases
+
+### Compile from sources
 
 Needs [go](https://golang.org/) 1.14 or later.
 
 ```
-$ go get -u github.com/jsautret/genapid
+$ go get -u github.com/jsautret/genapid/cmd/genapid
 ```
+
+Exec will be build here: `$GOPATH/bin/genapid`.
 
 ### Ansible
 
