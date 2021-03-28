@@ -1,3 +1,7 @@
+// Copyright 2021 Jérôme Sautret. All rights reserved.  Use of this
+// source code is governed by an Apache License 2.0 that can be found
+// in the LICENSE file.
+
 // Package ctx defines the context available for predicates, that is, the data
 // about the incoming request or the result of the previous evaluated
 // predicates
