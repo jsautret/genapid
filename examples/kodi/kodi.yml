@@ -22,7 +22,7 @@
       value: secretToken
   - name: Read strings corresponding to lang param
     readfile:
-      yaml: '="examples/kodi."+In.URL.Params.lang[0]+".yml"'
+      yaml: '="examples/kodi/kodi."+In.URL.Params.lang[0]+".yml"'
     register: strings
   - name: Voices for TTS
     variable:

@@ -7,9 +7,11 @@ package conf
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
+	"os"
 	"reflect"
 
+	"github.com/jsautret/genapid/app/utils"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
@@ -36,15 +38,24 @@ type Params struct {
 	Conf map[string]interface{}
 }
 
-// Read the YAML config file and return Root config
-func Read(filename string) Root {
+// ReadFile reads the YAML config file and return Root config
+func ReadFile(filename string) Root {
 	log.Info().Str("filename", filename).Msg("Reading configuration file")
-	source, err := ioutil.ReadFile(filename)
+
+	handle, err := os.Open(filename)
 	if err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
+
+	defer utils.CloseQuietly(handle)
+	return Read(handle)
+}
+
+// Read reads the reader as YAML and return Root config
+func Read(r io.Reader) Root {
 	conf := Root{}
-	if err := yaml.Unmarshal(source, &conf); err != nil {
+	d := yaml.NewDecoder(r)
+	if err := d.Decode(&conf); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
 	return conf
@@ -55,7 +66,8 @@ func AddDefault(log zerolog.Logger, c *ctx.Ctx, defaultConf *ctx.DefaultParams) 
 	log.Debug().Interface("default", defaultConf).Msg("Setting default fields")
 	// for each predicate
 	for predicate, value := range *defaultConf {
-		log.Trace().Interface("default", value).Msg("Setting default fields for " + predicate)
+		log.Trace().Interface("default", value).
+			Msg("Setting default fields for " + predicate)
 		if _, ok := c.Default[predicate]; !ok {
 			// no default value yet for that predicate
 			c.Default[predicate] = make(map[string]interface{})

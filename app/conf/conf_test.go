@@ -6,12 +6,14 @@ package conf
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/go-test/deep"
 	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -216,6 +218,9 @@ l1:
 			},
 		},
 	}
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
@@ -244,11 +249,183 @@ l1:
 	}
 }
 
-func TestMain(m *testing.M) {
+func TestRead(t *testing.T) {
+	cases := []struct {
+		name       string
+		conf       string
+		pipes      int
+		predicates []int
+	}{
+		{
+			name: "OnePipe",
+			conf: `
+- name: pipe1
+  pipe:
+    - predicate1:
+       k1: v1
+       k2: v2
+`,
+			pipes:      1,
+			predicates: []int{1},
+		},
+		{
+			name: "TwoPipes",
+			conf: `
+- name: pipe1
+  pipe:
+    - predicate1:
+       k1: v1
+       k2: v2
+    - predicate2:
+       k1: v1
+       k2: v2
+- name: pipe2
+  pipe:
+    - predicate1:
+       k1: v1
+       k2: v2
+`,
+			pipes:      2,
+			predicates: []int{2, 1},
+		},
+	}
 	zerolog.SetGlobalLevel(logLevel)
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
 		With().Caller().Timestamp().Logger()
-	os.Exit(m.Run())
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Read(strings.NewReader(tc.conf))
+			assert.NotNil(t, r, "Wrong Read")
+			assert.Equal(t, tc.pipes, len(r), "wrong pipe nubmer")
+			for i, p := range r {
+				assert.Equal(t, tc.predicates[i], len(p.Pipe),
+					"wrong predicate nubmer")
+			}
+		})
+	}
+
+}
+
+func TestDefault(t *testing.T) {
+	cases := []struct {
+		name     string
+		expected bool              // return of AddDefault
+		defaults ctx.DefaultParams // defaults to set
+		curDef   ctx.Default       // Defaults set in ctx before
+		expDef   ctx.Default       // Expected defaults in ctx after
+	}{
+		{
+			name:     "empty",
+			expected: true,
+		},
+		{
+			name:     "emtpyParams",
+			expected: true,
+			defaults: ctx.DefaultParams{
+				"predicate1": map[string]interface{}{},
+			},
+			expDef: ctx.Default{
+				"predicate1": map[string]interface{}{},
+			},
+		},
+		{
+			name:     "wrongParam",
+			expected: false,
+			defaults: ctx.DefaultParams{
+				"predicate1": "wrong",
+			},
+			expDef: ctx.Default{
+				"predicate1": map[string]interface{}{},
+			},
+		},
+		{
+			name:     "defaultsEmptyCtx",
+			expected: true,
+			defaults: ctx.DefaultParams{
+				"predicate1": map[string]interface{}{
+					"param11": "v11",
+					"param12": "v22",
+				},
+				"predicate2": map[string]interface{}{
+					"param21": "v21",
+					"param22": "v22",
+				},
+			},
+			expDef: ctx.Default{
+				"predicate1": map[string]interface{}{
+					"param11": "v11",
+					"param12": "v22",
+				},
+				"predicate2": map[string]interface{}{
+					"param21": "v21",
+					"param22": "v22",
+				},
+			},
+		},
+		{
+			name:     "defaultsWithCtx",
+			expected: true,
+			defaults: ctx.DefaultParams{
+				"predicate1": map[string]interface{}{
+					"param11": "new11",
+				},
+				"predicate2": map[string]interface{}{
+					"param21": "new21",
+					"param22": "new22",
+				},
+			},
+			curDef: ctx.Default{
+				"predicate0": map[string]interface{}{
+					"param01": "v01",
+					"param02": "v02",
+				},
+				"predicate1": map[string]interface{}{
+					"param11": "v11",
+					"param12": "v22",
+				},
+				"predicate2": map[string]interface{}{
+					"param21": "v00",
+					"param22": "v00",
+				},
+			},
+			expDef: ctx.Default{
+				"predicate0": map[string]interface{}{
+					"param01": "v01",
+					"param02": "v02",
+				},
+				"predicate1": map[string]interface{}{
+					"param11": "new11",
+					"param12": "v22",
+				},
+				"predicate2": map[string]interface{}{
+					"param21": "new21",
+					"param22": "new22",
+				},
+			},
+		},
+	}
+	zerolog.SetGlobalLevel(logLevel)
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
+		With().Caller().Timestamp().Logger()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.expDef == nil {
+				tc.expDef = ctx.Default{}
+			}
+			if tc.curDef == nil {
+				tc.curDef = ctx.Default{}
+			}
+			c := ctx.Ctx{Default: tc.curDef}
+			r := AddDefault(log.Logger, &c, &tc.defaults)
+			assert.Equal(t, tc.expected, r, "wrong return")
+
+			assert.Equal(t, tc.expDef, c.Default, "wrong default")
+			if diff := deep.Equal(tc.expDef, c.Default); diff != nil {
+				t.Error(diff)
+			}
+		})
+	}
+
 }
 
 /***************************************************************************

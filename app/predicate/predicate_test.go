@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.FatalLevel
+var logLevel = zerolog.TraceLevel
 
 type testData struct {
 	name            string
@@ -50,6 +50,37 @@ func TestPredicate(t *testing.T) {
 name: keyValue
 test1:
   key: value
+`,
+		},
+		{
+			name:         "wrongPredicate",
+			expPredicate: "test1",
+			expResult:    false,
+			conf: `
+name: keyValue
+test2:
+  key: value
+`,
+		},
+		{
+			name:         "wrongParameters",
+			expPredicate: "test1",
+			expResult:    false,
+			conf: `
+name: keyValue
+test2:
+  - key: value
+`,
+		},
+		{
+			name:         "wrongResult",
+			expPredicate: "test1",
+			expResult:    false,
+			conf: `
+name: keyValue
+test1:
+  key: value
+result: wrong
 `,
 		},
 		{
@@ -112,6 +143,18 @@ variable:
   - v1: val1
   - v2: val2
 when: =false
+`,
+		},
+		{
+			name:         "variableWhenWrong",
+			expPredicate: "test_variable",
+			expResult:    true,
+			expVars:      ctx.Variables{},
+			conf: `
+variable:
+  - v1: val1
+  - v2: val2
+when: wrong
 `,
 		},
 		{
@@ -189,6 +232,19 @@ register: registered
 `,
 		},
 		{
+			name:         "registerWrong",
+			expPredicate: "test_register",
+			expResult:    false,
+			expRegister:  "registered",
+			conf: `
+test_register:
+  key: value
+register:
+  - s1
+  - s2
+`,
+		},
+		{
 			name:         "registerEmpty",
 			expPredicate: "test_register_empty",
 			expResult:    true,
@@ -200,6 +256,34 @@ register: registered
 test_register_empty:
   key: value
 register: empty
+`,
+		},
+		{
+			name:         "pipe",
+			expPredicate: "test_variable",
+			expResult:    true,
+			expVars: ctx.Variables{
+				"v1": "val1",
+				"v2": "val2",
+			},
+			conf: `
+name: pipe
+pipe:
+  - variable:
+     - v1: val1
+     - v2: val2
+`,
+		},
+		{
+			name:         "pipeWrong",
+			expPredicate: "test_variable",
+			expResult:    false,
+			conf: `
+name: pipe
+pipe:
+  variable:
+   - v1: val1
+   - v2: val2
 `,
 		},
 	}
@@ -230,15 +314,18 @@ register: empty
 			// Evaluate
 			res := Process(log.Logger, cfg, c)
 			// Check boolean result
-			assert.Equal(t, tc.expResult, res, "Wrong return for test "+tc.name)
+			assert.Equal(t, tc.expResult, res,
+				"Wrong return for Process")
 			if res {
 				switch {
 				case tc.expVars != nil:
 					// Check variables set by predicate
-					assert.Equal(t, tc.expVars, c.V, "Variables mismatch")
+					assert.Equal(t, tc.expVars, c.V,
+						"Variables mismatch")
 				case tc.expDef != nil:
 					// Check default set by predicate
-					assert.Equal(t, tc.expDef, c.Default, "Default mismatch")
+					assert.Equal(t, tc.expDef, c.Default,
+						"Default mismatch")
 				default:
 					// Check params received by predicate
 					assert.Equal(t, tc.expConf, parsedConf)

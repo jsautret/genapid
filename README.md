@@ -18,7 +18,8 @@ Google Home or as an API broker between several API or IoT services.
         - [Receive Github Webhook and send Pushbullet notification](#receive-github-webhook-and-send-pushbullet-notification)
         - [Controlling Kodi with Google Assistant](#controlling-kodi-with-google-assistant)
     - [Install](#install)
-        - [Compilation](#compilation)
+        - [Binary releases](#binary-releases)
+        - [Compile from sources](#compile-from-sources)
         - [Ansible](#ansible)
     - [Run](#run)
     - [Configuration](#configuration)
@@ -87,7 +88,8 @@ deploy genapid behind an Apache server.
 ## Run
 
 ``` shell
-$ Usage of ./cmd/genapid/genapid:
+$ ./cmd/genapid/genapid -h
+Usage of ./cmd/genapid/genapid:
   -config string
         Config file (default "api.yml")
   -loglevel string
@@ -96,10 +98,21 @@ $ Usage of ./cmd/genapid/genapid:
         Listening port (default 9110)
 ```
 
+The valid log levels are:
+- panic
+- fatal
+- error
+- warn
+- info
+- debug
+- trace
+
 ## Configuration
 
 The API is described in a YAML file, which is passed to genapid using
 the `-config` option.
+
+There is some examples in [examples/](examples/) directory.
 
 ### pipe
 

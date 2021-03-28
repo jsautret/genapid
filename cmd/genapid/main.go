@@ -60,7 +60,7 @@ func main() {
 		log.Info().Str("loglevel", logLevel.String()).Msg("Setting loglevel")
 	}
 
-	config = conf.Read(configFileName)
+	config = conf.ReadFile(configFileName)
 
 	for k := range plugins.List() {
 		log.Info().Str("plugin", k).Msg("Plugin enabled")
