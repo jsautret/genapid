@@ -39,7 +39,7 @@ func New() *Ctx {
 
 // URL contains info about incoming URL
 type URL struct {
-	Params url.Values //map[string]string
+	Params url.Values // map[string]string
 }
 
 // Request containas info about incoming request

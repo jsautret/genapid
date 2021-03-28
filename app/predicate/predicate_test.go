@@ -228,13 +228,14 @@ register: empty
 			// Check boolean result
 			assert.Equal(t, tc.expResult, res, "Wrong return for test "+tc.name)
 			if res {
-				if tc.expVars != nil {
+				switch {
+				case tc.expVars != nil:
 					// Check variables set by predicate
 					assert.Equal(t, tc.expVars, c.V, "Variables mismatch")
-				} else if tc.expDef != nil {
+				case tc.expDef != nil:
 					// Check default set by predicate
 					assert.Equal(t, tc.expDef, c.Default, "Default mismatch")
-				} else {
+				default:
 					// Check params received by predicate
 					assert.Equal(t, tc.expConf, parsedConf)
 					if tc.expRegister != "" {

@@ -19,11 +19,6 @@ import (
 
 var logLevel = zerolog.FatalLevel
 
-var (
-	username = "user1"
-	password = "pass1"
-)
-
 type ctrl struct {
 	t         *testing.T
 	path      string            // expected URL path

@@ -15,9 +15,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.DebugLevel
+var logLevel = zerolog.FatalLevel
 
-func testHeader(t *testing.T) {
+func TestHeader(t *testing.T) {
 	cases := []struct {
 		name         string
 		conf         string
@@ -34,23 +34,23 @@ func testHeader(t *testing.T) {
 			name:     "noHeader",
 			expected: false,
 			conf: `
-name: key
+name: Key
 value: value
 `,
 		},
 		{
 			name:     "Header",
 			expected: true,
-			header:   []string{"key", "value"},
+			header:   []string{"Key", "value"},
 			conf: `
-name: key
+name: Key
 value: value
 `,
 		},
 		{
 			name:     "Header",
 			expected: true,
-			header:   []string{"key", "value"},
+			header:   []string{"Key", "value"},
 			conf: `
 name: key
 `,
@@ -74,8 +74,12 @@ name: key
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {
 				assert.Equal(t,
-					tc.expected, p.Call(log, c), "bad predicate result")
-				assert.Equal(t, tc.header[1], p.Result()["value"], "bad value")
+					tc.expected, p.Call(log, c),
+					"bad predicate result")
+				if tc.header != nil {
+					assert.Equal(t, tc.header[1],
+						p.Result()["value"], "bad value")
+				}
 			}
 		})
 

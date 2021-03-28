@@ -33,9 +33,7 @@ func init() {
 
 // Main handler for incoming requests
 func handler(w http.ResponseWriter, r *http.Request) {
-	if !process(w, r) {
-		//w.WriteHeader(http.StatusNotFound)
-	}
+	process(w, r)
 }
 
 func main() {

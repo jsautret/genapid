@@ -352,11 +352,9 @@ func BenchmarkWithGval(b *testing.B) {
   ***************************************************************************/
 func getConf(t *testing.T, source string) conf.Root {
 	c := conf.Root{}
-	//log.Debug().Str("source", source).Msg("XXX")
 	if err := yaml.Unmarshal([]byte(source), &c); err != nil {
 		t.Fatalf("YAML parsing: %v", err)
 	}
-	//log.Debug().Interface("yaml", c).Msg("XXX")
 	return c
 }
 

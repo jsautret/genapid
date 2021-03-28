@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
 
@@ -233,10 +232,8 @@ l1:
 			p := params{}
 			if !GetPredicateParams(context, &conf, &p) {
 				t.Errorf("Cannot convert params %v", conf)
-			} else {
-				if diff := deep.Equal(p, c.expected); diff != nil {
-					t.Error(diff)
-				}
+			} else if diff := deep.Equal(p, c.expected); diff != nil {
+				t.Error(diff)
 			}
 		})
 
@@ -256,12 +253,6 @@ func TestMain(m *testing.M) {
 func getConf(t *testing.T, source string) Params {
 	c := Params{Name: "test"}
 	require.Nil(t, yaml.Unmarshal([]byte(source), &(c.Conf)), "YAML parsing error: %v")
-	return c
-}
-
-func getConfB(b *testing.B, source string) Params {
-	c := Params{}
-	require.Nil(b, json.Unmarshal([]byte(source), &c))
 	return c
 }
 
