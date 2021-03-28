@@ -4,9 +4,10 @@
 
 # Generic API Daemon
 
-genapid is an API server using YAML format to describe the API behavior.
+genapid is an API server using YAML format to describe the API logic.
 
-It can be used to process Webhooks, add some custom commands to a Google Home or as an API broker between several API or IoT services.
+It can be used to process Webhooks, add some custom commands to a
+Google Home or as an API broker between several API or IoT services.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
@@ -14,6 +15,7 @@ It can be used to process Webhooks, add some custom commands to a Google Home or
 - [Generic API Daemon](#generic-api-daemon)
     - [Concept](#concept)
     - [Examples](#examples)
+        - [Receive Github Webhook and send Pushbullet notification](#receive-github-webhook-and-send-pushbullet-notification)
         - [Controlling Kodi with Google Assistant](#controlling-kodi-with-google-assistant)
     - [Install](#install)
         - [Compilation](#compilation)
@@ -23,10 +25,6 @@ It can be used to process Webhooks, add some custom commands to a Google Home or
         - [pipe](#pipe)
         - [Predicates](#predicates)
             - [Options](#options)
-                - [`name`](#name)
-                - [`result`](#result)
-                - [`register`](#register)
-                - [`when`](#when)
             - [Special predicates](#special-predicates)
                 - [`variable`](#variable)
                 - [`default`](#default)
@@ -47,16 +45,27 @@ actions.
 
 ## Examples
 
+### Receive Github Webhook and send Pushbullet notification
+
+The examples shows how to receive a Webhook event and call an external
+API or use Google Home to get a voice notification:
+
+[examples/github/](examples/github/)
+
+
 ### Controlling Kodi with Google Assistant
 
-* Control Kodi by voice using a Google Home:
+Control Kodi by voice using a Google Home and receive voice feedback:
+
 [examples/kodi/](examples/kodi/)
+
+
 
 ## Install
 
 ### Compilation
 
-Needs [go](https://golang.org/).
+Needs [go](https://golang.org/) 1.14 or later.
 
 ```
 $ go get -u github.com/jsautret/genapid
@@ -81,13 +90,13 @@ $ Usage of ./cmd/genapid/genapid:
 
 ## Configuration
 
-The API is described in a YAML file, which passed to genapid using the
-`-config` option.
+The API is described in a YAML file, which is passed to genapid using
+the `-config` option.
 
 ### pipe
 
-The API description file is a list of `pipe` elements. Each `pipe` is
-a list of predicates or sub-pipes. Only the `name` and `result`
+The API description file is a list of `pipe` elements. Each `pipe`
+contains a list of predicates or sub-pipes. The `name` and `result`
 options can be used on `pipe` (see below for the description of
 options).
 
@@ -95,50 +104,29 @@ The result of a `pipe`is always true, unless `result` option is set.
 
 ### Predicates
 
-The list of predicates is in [predicates/](predicates/). There is also
-some additional predicates described below.
+The list of predicates types  [predicates/](predicates/). There is also
+some [additional predicates](#special-predicates) described below.
 
-Each predicates has it own specific parameters described in it documentation.
+Each predicates has it own specific parameters described in its documentation.
 
 #### Options
 
 The following options can be set on predicates:
 
-##### `name`
-
-Type: string
-
-Used for documenting and logs readability only.
-
-##### `result`
-
-Type: boolean
-
-Force the value of the predicate
-
-##### `register`
-
-Type string
-
-Store the results set by the predicate. This data can be accessed in
-following predicates with the `R` map. For example, if you set option
-`register: myresult`, the data set by the predicate can then be
-accessed with `R.myresult` which is a map. The `result` key will
-contain the boolean result of the predicate (real one, not the one set
-with the `result`option). So `R.myresult.result` can be used to check
-the result of the predicate. Some predicate may provide additional
-fields described in their documentation.
-
-##### `when`
-Type: boolean
-
-If false, the predicate evaluation is skipped.
+| Name     | Type    | Description                                     |
+| ---      | ---     | ---                                             |
+| `name`   | string  | Used for documenting and logs readability only. |
+| `result` | boolean | Force the value of the predicate                |
+| `when`   | boolean | If false, the predicate evaluation is skipped.  |
+| `register` | string  | Store the results set by the predicate. This data can be accessed in following predicates with the `R` map. For example, if you set option `register: myresult`, the data set by the predicate can then be accessed with `R.myresult` which is a map. The `result` key will contain the boolean result of the predicate (real one, not the one set with the `result`option). So `R.myresult.result` can be used to check the result of the predicate. Some predicate may provide additional fields described in their documentation. |
 
 #### Special predicates
 
 ##### `variable`
-Used to set variables. The variables can be accessed in following
-predicates with the `V` map. It takes a list of map as parameters.
+Used to set variables. It takes a list of map as parameters.
+
+The variables can be accessed in predicates with the `V`
+map.
 
 Example:
 ``` yaml
@@ -148,9 +136,9 @@ variable:
 ```
 
 ##### `default`
-Used to set default parameters for the following
-predicates. Expressions are evaluated when the predicate is evaluated,
-not when `default` is evaluated.
+Used to set default parameters for predicates. Expressions are
+evaluated when the predicate is evaluated, not when `default` is
+evaluated.
 
 Example:
 ``` yaml
@@ -162,7 +150,7 @@ default:
 
 ### Expressions
 
-If the value of the parameter of a predicate starts with an = (equal
+If the value of the parameter of a predicate starts with an `=` (equal
 sign), it will be evaluated as a [Gval
 expression](https://github.com/PaesslerAG/gval). If the evaluation of
 an expression fails, the predicate returns false.

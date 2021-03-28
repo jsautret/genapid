@@ -1,0 +1,115 @@
+- name: "Incoming github request"
+  pipe:
+  - name: github dedicated endpoint
+    match:
+      string: =In.Req.URL.Path
+      value: /github
+
+  - name: must be HTTP POST
+    match:
+      string: =In.Req.Method
+      value: POST
+
+  - name: Get body
+    body:
+      mime: application/json
+      type: string
+    register: body
+
+  - name: Check GitHub hash
+    header:
+      name: X-Hub-Signature-256
+      value: '="sha256=" + hmacSha256(R.tokens.content.github, R.body.payload)'
+
+  - name: Parse JSON body
+    body:
+      type: json
+    register: body
+
+  - header:
+      name: X-GitHub-Event
+    register: event
+
+  - name: Read tokens
+    readfile:
+      yaml: "tokens.yml"
+    register: tokens
+
+  - default:
+      http: # pushbullet push API
+        url: https://api.pushbullet.com/v2/pushes
+        method: post
+        headers:
+          Access-Token: =R.tokens.content.pushbullet
+
+      match: # match event name per default
+        string: '=R.event.value'
+
+      chromecast: # Used to give voice notifications
+        # Google Home IP addr
+        addr: 192.168.3.9
+        # Credentials to use Google API service for TTS
+        google_service_account: "path_to/google_service_account.json"
+
+  - log:
+      msg: '="event received: "+R.event.value'
+
+
+  - name: ping event
+    pipe:
+    - match:
+        value: ping
+    - log:
+        msg: =format("received ping, %v", R.body.payload.zen)
+    - http:
+        body:
+          json:
+            type: note
+            title: github ping
+            body: =R.body.payload.zen
+
+
+  - name: push event
+    pipe:
+    - match:
+        value: push
+    - log:
+        msg: =format("received push from %v", R.body.payload.pusher.name)
+    - http:
+        body:
+          json:
+            type: note
+            title: github pull request
+            body: >
+              =format("received push from %v", R.body.payload.pusher.name)
+    - chromecast:
+        tts: >
+          =format("Github push received from %v", R.body.payload.pusher.name)
+
+
+  - name: pull_request event
+    pipe:
+    - match:
+        value: pull_request
+    - log:
+        msg: >
+          =format("received pull_request on %v from %v", pull_request from %v",
+          R.body.payload.action)
+
+    - match:
+        string: =R.body.payload.action
+        value: opened
+
+    - http:
+        body:
+          json:
+            type: note
+            title: github pull request
+            body: >
+              =format("received pull_request on %v from %v",
+              R.body.payload.repository, R.body.payload.sender.login)
+
+    - chromecast:
+        tts: >
+          =format("Github pull request received from %v",
+          R.body.payload.pusher.name)
