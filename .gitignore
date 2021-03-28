@@ -1,3 +1,4 @@
 *.out
 /cmd/genapid/genapid
 *.html
+/_local/
