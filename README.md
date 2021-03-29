@@ -1,5 +1,9 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/jsautret/genapid)](https://goreportcard.com/report/github.com/jsautret/genapid)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jsautret/genapid)
+[![GitHub release](https://img.shields.io/github/release/jsautret/genapid.svg)](https://github.com/jsautret/genapid/releases)
 [![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg)](https://pkg.go.dev/github.com/jsautret/genapid)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jsautret/genapid)](https://goreportcard.com/report/github.com/jsautret/genapid)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jsautret/genapid/test?label=tests)](https://github.com/jsautret/genapid/actions/workflows/test.yml)
+
 
 
 # Generic API Daemon
@@ -19,6 +23,8 @@ Google Home or as an API broker between several API or IoT services.
         - [Controlling Kodi with Google Assistant](#controlling-kodi-with-google-assistant)
     - [Install](#install)
         - [Binary releases](#binary-releases)
+        - [Docker](#docker)
+            - [Run the genapi container](#run-the-genapi-container)
         - [Compile from sources](#compile-from-sources)
         - [Ansible](#ansible)
     - [Run](#run)
@@ -50,14 +56,12 @@ actions.
 
 The examples shows how to receive a Webhook event and call an external
 API or use Google Home to get a voice notification:
-
 [examples/github/](examples/github/)
 
 
 ### Controlling Kodi with Google Assistant
 
 Control Kodi by voice using a Google Home and receive voice feedback:
-
 [examples/kodi/](examples/kodi/)
 
 
@@ -69,6 +73,28 @@ Control Kodi by voice using a Google Home and receive voice feedback:
 Binary execs for various platforms are available here:
 
 https://github.com/jsautret/genapid/releases
+
+### Docker
+
+Docker containers are available on Docker Hub:
+
+https://hub.docker.com/repository/docker/jsautret/genapid/general
+
+
+#### Run the genapid container
+
+The configuration file that describes your API must be named `api.yml`
+and placed in a directory that you have to mount on `/conf` volume and
+port 8080 must be mapped with a local port:
+
+``` shell
+CONF=/etc/genapid # must contain api.yml
+PORT=9080
+docker run --name genapid -d -p $PORT:8080 -v $CONF:/conf jsautret/genapid:latest
+
+curl http://localhost:$PORT/test
+docker logs genapid
+```
 
 ### Compile from sources
 
