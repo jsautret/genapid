@@ -18,7 +18,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.InfoLevel
+var logLevel = zerolog.FatalLevel
 
 type params struct {
 	S1, S2 string

@@ -26,6 +26,5 @@ require (
 	github.com/vishen/go-chromecast v0.2.10-0.20210325213221-ac359eecd3f3
 	github.com/ybbus/jsonrpc v2.1.2+incompatible
 	golang.org/x/sys v0.0.0-20210324051608-47abb6519492 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )

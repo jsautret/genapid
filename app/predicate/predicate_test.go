@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var logLevel = zerolog.TraceLevel
+var logLevel = zerolog.FatalLevel
 
 type testData struct {
 	name            string
