@@ -1,5 +1,5 @@
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jsautret/genapid)
 [![GitHub release](https://img.shields.io/github/release/jsautret/genapid.svg)](https://github.com/jsautret/genapid/releases)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jsautret/genapid)
 [![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg)](https://pkg.go.dev/github.com/jsautret/genapid)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jsautret/genapid)](https://goreportcard.com/report/github.com/jsautret/genapid)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jsautret/genapid/test?label=tests)](https://github.com/jsautret/genapid/actions/workflows/test.yml)
@@ -140,18 +140,33 @@ the `-config` option.
 
 There is some examples in [examples/](examples/) directory.
 
-### pipe
+The main structure is a list of [pipes](#pipe). Each pipe is evaluated for each incoming request.
+
+### `init`
+
+The first element of the top-level list can be `init`, which contains
+a list of [predicates](#predicates). The predicates in `init` are
+evaluated only once when genapid starts. `init` can be used to read
+data from a file and populate the context once for all and not for
+every request. See the beginning of
+[`github.yml`](examples/github/github.yml) for an example.
+
+### `pipe`
 
 The API description file is a list of `pipe` elements. Each `pipe`
 contains a list of predicates or sub-pipes. The `name` and `result`
 options can be used on `pipe` (see below for the description of
-options).
+these options).
 
 The result of a `pipe`is always true, unless `result` option is set.
 
 ### Predicates
 
-The list of predicates types  [predicates/](predicates/). There is also
+Each predicate in a pipe is evaluated for an give incoming
+request. When a predicate returns false, the following predicates in
+the pipe are ignored and the next pipe in the conf is evaluated.
+
+The list of predicates types is in [predicates/](predicates/). There is also
 some [additional predicates](#special-predicates) described below.
 
 Each predicates has it own specific parameters described in its documentation.
@@ -163,7 +178,7 @@ The following options can be set on predicates:
 | Name     | Type    | Description                                     |
 | ---      | ---     | ---                                             |
 | `name`   | string  | Used for documenting and logs readability only. |
-| `result` | boolean | Force the value of the predicate                |
+| `result` | boolean | Force the result value of the predicate         |
 | `when`   | boolean | If false, the predicate evaluation is skipped.  |
 | `register` | string  | Store the results set by the predicate. This data can be accessed in following predicates with the `R` map. For example, if you set option `register: myresult`, the data set by the predicate can then be accessed with `R.myresult` which is a map. The `result` key will contain the boolean result of the predicate (real one, not the one set with the `result`option). So `R.myresult.result` can be used to check the result of the predicate. Some predicate may provide additional fields described in their documentation. |
 
@@ -179,7 +194,9 @@ Example:
 ``` yaml
 variable:
  - variable1: value1
- - variable2: value2
+ - variable2: '=  V.variable1 + "_suffix"
+log:
+  msg: '= "variable2: " + V.variable2 ' # will log "variable2: value1_suffix"
 ```
 
 ##### `default`

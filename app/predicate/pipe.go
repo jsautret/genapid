@@ -7,13 +7,13 @@ package predicate
 import (
 	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/ctx"
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 )
 
 // ProcessPipe evaluate a pipe of predicates
-func ProcessPipe(p *conf.Pipe, c *ctx.Ctx) bool {
+func ProcessPipe(log zerolog.Logger, p *conf.Pipe, c *ctx.Ctx) bool {
 	name := p.Name
-	log := log.With().Str("pipe", name).Logger()
+	log = log.With().Str("pipe", name).Logger()
 
 	log.Debug().Msgf("Processing pipe '%v'", name)
 

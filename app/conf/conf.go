@@ -26,6 +26,7 @@ type Root []Pipe
 type Pipe struct {
 	Name    string
 	Pipe    []Predicate
+	Init    []Predicate
 	Default ctx.Default
 }
 

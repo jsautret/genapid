@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/jsautret/genapid/app/predicate"
@@ -13,7 +14,7 @@ import (
 )
 
 // Process incoming request
-func process(w http.ResponseWriter, r *http.Request) bool {
+func process(w http.ResponseWriter, r *http.Request, c *ctx.Ctx) bool {
 	log.Debug().Str("http", "start").Str("path", r.URL.Path).
 		Msg("Processing HTTP request")
 
@@ -27,14 +28,17 @@ func process(w http.ResponseWriter, r *http.Request) bool {
 		Req: r,
 		URL: url,
 	}
-	c := ctx.New()
 	c.In = In
 
 	// Process each pipe
 	var res bool
 	for i := 0; i < len(config); i++ {
 		pc := config[i]
-		res = predicate.ProcessPipe(&pc, c)
+		if pc.Init != nil {
+			log.Error().Err(
+				errors.New("Cannot use 'init' with a 'pipe'")).Msg("")
+		}
+		res = predicate.ProcessPipe(log.Logger, &pc, c)
 	}
 	log.Debug().Str("http", "end").Str("path", r.URL.Path).
 		Msg("HTTP request processed")

@@ -280,7 +280,7 @@ func pipeHandling(log zerolog.Logger, c *ctx.Ctx, o *pOptions) bool {
 		return false
 	}
 	o.pipe.Name = o.name
-	ProcessPipe(&o.pipe, c)
+	ProcessPipe(log, &o.pipe, c)
 	// Always continue after a pipe, unless result: option is set
 	// and evaluate to false
 	result := true

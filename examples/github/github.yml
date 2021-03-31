@@ -1,3 +1,9 @@
+- init:
+  - name: Read tokens
+    readfile:
+      yaml: "tokens.yml"
+    register: tokens
+
 - name: "Incoming github request"
   pipe:
   - name: github dedicated endpoint
@@ -29,11 +35,6 @@
   - header:
       name: X-GitHub-Event
     register: event
-
-  - name: Read tokens
-    readfile:
-      yaml: "tokens.yml"
-    register: tokens
 
   - default:
       http: # pushbullet push API

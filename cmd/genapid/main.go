@@ -12,13 +12,16 @@ import (
 
 	"github.com/jsautret/genapid/app/conf"
 	"github.com/jsautret/genapid/app/plugins"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-// Global conf
 var (
+	// Global conf
 	config conf.Root
+	// main context
+	staticCtx *ctx.Ctx
 )
 
 // Command line flags variables
@@ -37,7 +40,7 @@ func init() {
 
 // Main handler for incoming requests
 func handler(w http.ResponseWriter, r *http.Request) {
-	process(w, r)
+	process(w, r, staticCtx)
 }
 
 func main() {
@@ -61,6 +64,8 @@ func main() {
 	}
 
 	config = conf.ReadFile(configFileName)
+	staticCtx = ctx.New()
+	processInit(&config, staticCtx)
 
 	for k := range plugins.List() {
 		log.Info().Str("plugin", k).Msg("Plugin enabled")

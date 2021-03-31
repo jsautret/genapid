@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/jsautret/genapid/app/conf"
+	"github.com/jsautret/genapid/ctx"
 	"github.com/jsautret/zltest"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -248,6 +249,112 @@ func TestFullConf(t *testing.T) {
         msg: End
 `,
 		},
+		{
+			name:       "Init",
+			method:     http.MethodGet,
+			path:       "/Init",
+			statusCode: http.StatusOK,
+			logFound: expLog{
+				{"log": "Start"},
+				{"log": "End"},
+			},
+			conf: `
+- init:
+    - log:
+        msg: Start
+    - variable:
+        - name1: value1
+        - name2: value2
+    - match:
+        string: "BBBAAABBB"
+        regexp: "B(A+)B"
+      register: match
+    - default:
+        match:
+          value: value1
+
+- name: "Init"
+  pipe:
+    - match:
+       string: "=V.name1"
+    - match:
+       string: "=R.match.matches[1]"
+       value: AAA
+    - log:
+        msg: End
+`,
+		},
+		{
+			name:       "InitWithPipe",
+			method:     http.MethodGet,
+			path:       "/InitWithPipe",
+			statusCode: http.StatusOK,
+			logFound: expLog{
+				{"log": "Start"},
+				{"error": "'pipe' cannot be used in 'init' section"},
+			},
+			logNotFound: expLog{
+				{"log": "Pipe"},
+				{"log": "Init"},
+				{"log": "End"},
+			},
+			conf: `
+- pipe: # is illegal here because an init is defined
+    - log: # won't be evaluated
+        msg: Pipe
+  init: # won't be evaluated because of illegal pipe
+    - log:
+        msg: Init
+    - variable:
+        - name1: value1
+        - name2: value2
+- name: "InitWithPipe"
+  pipe:
+    - log:
+        msg: Start
+    - match:
+       string: "=V.name1" # error, init was not evaluated
+       value: value1
+    - log:
+        msg: End
+`,
+		},
+		{
+			name:       "InitInPipe",
+			method:     http.MethodGet,
+			path:       "/InitInPipe",
+			statusCode: http.StatusOK,
+			logFound: expLog{
+				{"log": "Pipe1"},
+				{"error": "Cannot use 'init' with a 'pipe'"},
+				{"log": "Pipe2"},
+			},
+			logNotFound: expLog{
+				{"log": "Init"},
+				{"log": "End"},
+			},
+			conf: `
+- name: "Pipe1"
+  pipe:
+    - log:
+        msg: Pipe1
+- init: # is illegal if not at the start, it won't be evaluated
+    - log:
+        msg: Init
+    - variable:
+        - name1: value1
+        - name2: value2
+  name: Pipe2
+  pipe:
+    - log:
+        msg: Pipe2
+    - match:
+       string: "=V.name1" # error, init was not evaluated
+       value: value1
+    - log:
+        msg: End
+`,
+		},
 	}
 	for _, tc := range tt {
 		zerolog.SetGlobalLevel(logLevel)
@@ -265,7 +372,8 @@ func TestFullConf(t *testing.T) {
 
 			}
 			config = getConf(t, tc.conf)
-
+			staticCtx = ctx.New()
+			processInit(&config, staticCtx)
 			request := httptest.NewRequest(tc.method, tc.path,
 				bytes.NewBuffer([]byte(tc.body)))
 			if tc.mime != "" {
