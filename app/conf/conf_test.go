@@ -187,6 +187,50 @@ s1: '=hmacSha256("key", "value")'
 			},
 		},
 		{
+			name: "Dir",
+			conf: `
+s1: '=dir("/usr/local/bin/genapid")'
+s2: '=dir("bin/genapid")'
+`,
+			expected: params{
+				S1: "/usr/local/bin",
+				S2: "bin",
+			},
+		},
+		{
+			name: "Base",
+			conf: `
+s1: '=base("/usr/local/bin/genapid")'
+s2: '=base("bin/genapid")'
+`,
+			expected: params{
+				S1: "genapid",
+				S2: "genapid",
+			},
+		},
+		{
+			name: "URL",
+			conf: `
+s1: '=url("https://github.com/jsautret/genapid")|EscapedPath()'
+s2: '=url("https://github.com/jsautret/genapid")|Hostname()'
+`,
+			expected: params{
+				S1: "/jsautret/genapid",
+				S2: "github.com",
+			},
+		},
+		{
+			name: "badURL",
+			conf: `
+s1: '=url("")|EscapedPath()'
+s2: '=url("github.com/jsautret/genapid")|Hostname()'
+`,
+			expected: params{
+				S1: "",
+				S2: "",
+			},
+		},
+		{
 			name: "Number",
 			conf: `
 i: '=40+2'

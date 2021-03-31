@@ -14,6 +14,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -32,7 +34,8 @@ func evaluateGval(s string, c *ctx.Ctx) (interface{}, error) {
 			jsonpath.Language(), jsonpathFunction(),
 			pipeOperator(), fuzzyFunction(), formatFunction(),
 			lenFunction(), upperFunction(), hmacSha256Function(),
-			hmacSha1Function())
+			hmacSha1Function(), dirFunction(), baseFunction(),
+			urlFunction())
 	}
 	return s, nil
 }
@@ -257,5 +260,54 @@ func hmacSha1Function() gval.Language {
 			return nil, errors.New("hmacSha1() cannot write hash")
 		}
 		return hex.EncodeToString(h.Sum(nil)), nil
+	})
+}
+
+// Add a dir(string) function to Gval
+func dirFunction() gval.Language {
+	return gval.Function("dir", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 1 {
+			return nil, errors.New("dir() expects exactly one arguments")
+		}
+		s, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("dir() expects string as argument")
+		}
+
+		return filepath.Dir(s), nil
+	})
+}
+
+// Add a base(string) function to Gval
+func baseFunction() gval.Language {
+	return gval.Function("base", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 1 {
+			return nil, errors.New("base() expects exactly one arguments")
+		}
+		s, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("base() expects string as argument")
+		}
+
+		return filepath.Base(s), nil
+	})
+}
+
+// Add a url(string) function to Gval
+func urlFunction() gval.Language {
+	return gval.Function("url", func(arguments ...interface{}) (interface{}, error) {
+		if len(arguments) != 1 {
+			return nil, errors.New("url() expects exactly one arguments")
+		}
+		s, ok := arguments[0].(string)
+		if !ok {
+			return nil, errors.New("url() expects string as argument")
+		}
+
+		u, err := url.Parse(s)
+		if err != nil {
+			return nil, errors.New("url() expects an URL string as argument")
+		}
+		return u, nil
 	})
 }
