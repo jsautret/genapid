@@ -21,7 +21,7 @@ var Name = "command"
 type Predicate struct {
 	name   string
 	params struct { // Params accepted by the predicate
-		Command    string `validate:"required" mod:"path"`
+		Cmd        string `validate:"required" mod:"path"`
 		Chdir      string `mod:"path"`
 		Args       []string
 		Stdin      string
@@ -34,10 +34,10 @@ type Predicate struct {
 func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 
-	log.Debug().Str("Command", p.Command).Msg("")
+	log.Debug().Str("Command", p.Cmd).Msg("")
 	log.Debug().Str("Chdir", p.Chdir).Msg("")
 
-	cmd := exec.Command(p.Command, p.Args...)
+	cmd := exec.Command(p.Cmd, p.Args...)
 
 	if p.Chdir != "" {
 		cmd.Dir = p.Chdir

@@ -6,7 +6,7 @@ The `command` predicate runs an external command.
 
 | Option      | Required | Description                                           |
 | ---         | ---      | ---                                                   |
-| `command`   | yes      | Name of the command to run                            |
+| `cmd`       | yes      | Name of the command to run                            |
 | `chdir`     |          | Change into this directory before running the command |
 | `Args`      |          | List of command line args                             |
 | `Stdin`     |          | String to pass to command stdin                       |

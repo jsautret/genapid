@@ -40,14 +40,14 @@ func TestHTTP(t *testing.T) {
 		{
 			name: "true",
 			conf: `
-command: "true"
+cmd: "true"
 `,
 			expected: true,
 		},
 		{
 			name: "true",
 			conf: `
-command: "false"
+cmd: "false"
 `,
 			expected: false,
 			expRc:    1,
@@ -58,7 +58,7 @@ command: "false"
 			expStdout: "hello world!",
 			expStderr: "",
 			conf: `
-command: tr
+cmd: tr
 args:
   - A-Z
   - a-z
@@ -72,7 +72,7 @@ stdin: "Hello World!"
 			expStdout: "/usr\n",
 			expStderr: "",
 			conf: `
-command: pwd
+cmd: pwd
 chdir: /usr
 `,
 			expected: true,
