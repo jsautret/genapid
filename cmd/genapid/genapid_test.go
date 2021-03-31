@@ -84,13 +84,13 @@ func TestFullConf(t *testing.T) {
 - name: "Test IncomingHttpMatching"
   pipe:
   - match:
-      string: =In.Req.Method
+      string: =In.Method
       value: POST
   - match:
-      string: =In.URL.Params.param2[0]
+      string: '=In.URL.Query()|param2[0]'
       value: value2
   - match:
-      string: =In.URL.Params.param1[0]
+      string: '=In.URL.Query()|param1[0]'
       regexp: value[1-9]
   - body:
       mime: application/json

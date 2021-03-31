@@ -22,7 +22,8 @@ process.
 The phrase received by Google Assistant is passed in the URL query
 parameter we've setup in the Webhook in IFTTT, which is `q`.
 
-In genapid, the URL query parameters are available in `In.URL.Params`.
+In genapid, the URL query parameters are available in `In.URL.Query()`. We get the `q` field of the `Query()` result, and take the first one found: `In.URL.Query()|q[0]`
+```
 
 We use a [`match`](../../predicates/match/) predicate to match the
 phrase against a regexp.
@@ -35,7 +36,7 @@ documenting and logs readability.
     pipe:
     - name: Match a phrase asking to mute sound
       match:
-        string: = In.URL.Params.q[0]
+        string: = In.URL.Query()|q[0]
         regexp:  ^(mute|unmute)( the sound)?$
 ```
 
@@ -68,7 +69,7 @@ title. We register the results in `movie`.
     pipe:
     - name: Match a phrase asking to play a movie
       match:
-        string: = In.URL.Params.q[0]
+        string: = In.URL.Query()|q[0]
         regexp: "play (the movie )?(?P<title>.+)"
       register: movie
 ```
@@ -134,7 +135,7 @@ predicate at the beginning of our main pipe:
   - name: Set default values
     default:
       match: # Phrase from Google Assistant sent by IFTTT
-        string: = In.URL.Params.q[0]
+        string: = In.URL.Query()|q[0]
       jsonrpc: # Kodi API params
         url: http://192.168.0.32:8080/jsonrpc
         basic_auth:

@@ -86,7 +86,7 @@ s1: '=V.variable1'
 		{
 			name: "Request",
 			conf: `
-s1: '=In.Req.Method'
+s1: '=In.Method'
 `,
 			expected: params{
 				S1: "POST",
@@ -225,7 +225,7 @@ l1:
 		t.Run(c.name, func(t *testing.T) {
 			conf := getConf(t, c.conf)
 			context := ctx.New()
-			context.In.Req.Method = "POST"
+			context.In.Method = "POST"
 			context.V = ctx.Variables{
 				"variable1": "value1",
 				"variable2": []string{"value21", "value22"},

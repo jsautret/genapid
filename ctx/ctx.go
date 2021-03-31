@@ -15,7 +15,7 @@ import (
 // Ctx is the main entry point to the context
 type Ctx struct {
 	// Incoming request
-	In Request
+	In *http.Request
 
 	// Default predicates values, set by 'default' predicate
 	Default Default
@@ -34,7 +34,7 @@ type Ctx struct {
 // New returns a empty context
 func New() *Ctx {
 	return &Ctx{
-		In:      Request{Req: &http.Request{}},
+		In:      &http.Request{},
 		Default: Default{},
 		R:       Registered{},
 		V:       Variables{},
@@ -44,15 +44,6 @@ func New() *Ctx {
 // URL contains info about incoming URL
 type URL struct {
 	Params url.Values // map[string]string
-}
-
-// Request containas info about incoming request
-type Request struct {
-	// Incoming HTTP request
-	Req *http.Request
-
-	// Imcoming URL info
-	URL *URL
 }
 
 // Registered stores results resgistered by a predicate

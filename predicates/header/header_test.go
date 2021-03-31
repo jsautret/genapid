@@ -73,7 +73,7 @@ name: key
 				h := http.Header{tc.header[0]: []string{tc.header[1]}}
 				Req.Header = h
 			}
-			c.In = ctx.Request{Req: &Req}
+			c.In = &Req
 			init := genapid.InitPredicate(log, c, p, cfg)
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {

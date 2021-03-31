@@ -37,7 +37,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	log.Debug().Str("Type", p.Type).Msg("")
 	log.Debug().Str("Mime", p.Mime).Msg("")
 
-	switch c.In.Req.Method {
+	switch c.In.Method {
 	case "GET":
 		return false
 	case "HEAD":
@@ -47,7 +47,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	}
 
 	if p.Mime != "" { // checking if content-type match
-		contentType := c.In.Req.Header.Get("Content-Type")
+		contentType := c.In.Header.Get("Content-Type")
 		m, _, err := mime.ParseMediaType(contentType)
 		if err != nil {
 			log.Warn().Err(err).Msg("Cannot parse Content-Type")
@@ -59,7 +59,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 		}
 	}
 	if p.Type != "" {
-		limitedReader := &io.LimitedReader{R: c.In.Req.Body, N: p.Limit}
+		limitedReader := &io.LimitedReader{R: c.In.Body, N: p.Limit}
 		// Use a TeeReade to allow to use body predicate several times
 		var b bytes.Buffer
 		tee := io.TeeReader(limitedReader, &b)
@@ -81,7 +81,7 @@ func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 			predicate.results = ctx.Result{"payload": result}
 		}
 		// Put back the body in case the predicate is used later
-		c.In.Req.Body = ioutil.NopCloser(&b)
+		c.In.Body = ioutil.NopCloser(&b)
 	}
 	return true
 }

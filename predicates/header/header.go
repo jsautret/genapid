@@ -27,7 +27,7 @@ type Predicate struct {
 func (predicate *Predicate) Call(log zerolog.Logger, c *ctx.Ctx) bool {
 	p := predicate.params
 
-	v := c.In.Req.Header.Get(p.Name)
+	v := c.In.Header.Get(p.Name)
 	log.Debug().Str("name", p.Name).Msg("")
 	log.Debug().Str("value", v).Msg("")
 	predicate.result = ctx.Result{"value": v}

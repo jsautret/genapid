@@ -2,11 +2,11 @@
   pipe:
   - name: Run only on IFTTT dedicated endpoint
     match:
-      string: =In.Req.URL.Path
+      string: =In.URL.Path
       value: /ifttt
   - name: must be HTTP GET
     match:
-      string: =In.Req.Method
+      string: =In.Method
       value: GET
   - name: Body must be json
     match:

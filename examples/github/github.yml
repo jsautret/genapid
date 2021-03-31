@@ -1,19 +1,21 @@
+# See README.md in this directory
+
 - init:
-  - name: Read tokens
+  - name: Read secret tokens
     readfile:
       yaml: "tokens.yml"
     register: tokens
 
-- name: "Incoming github request"
+- name: Incoming github request
   pipe:
   - name: github dedicated endpoint
     match:
-      string: =In.Req.URL.Path
+      string: =In.URL.Path
       value: /github
 
   - name: must be HTTP POST
     match:
-      string: =In.Req.Method
+      string: =In.Method
       value: POST
 
   - name: Get body

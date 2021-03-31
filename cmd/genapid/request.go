@@ -20,15 +20,8 @@ func process(w http.ResponseWriter, r *http.Request, c *ctx.Ctx) bool {
 
 	log.Trace().Interface("headers", r.Header).Msg("")
 
-	// Create & init context structures
-	url := &ctx.URL{
-		Params: r.URL.Query(),
-	}
-	In := ctx.Request{
-		Req: r,
-		URL: url,
-	}
-	c.In = In
+	// init context structures with incoming request
+	c.In = r
 
 	// Process each pipe
 	var res bool

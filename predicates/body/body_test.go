@@ -154,7 +154,7 @@ mime: application/json
 				Req.Header = h
 			}
 			Req.Body = ioutil.NopCloser(strings.NewReader(tc.body))
-			c.In = ctx.Request{Req: &Req}
+			c.In = &Req
 			init := genapid.InitPredicate(log, c, p, cfg)
 			assert.Equal(t, !tc.invalidParam, init, "initPredicate")
 			if init {
