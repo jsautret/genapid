@@ -19,12 +19,10 @@ COPY . .
 
 WORKDIR /app/cmd/genapid
 
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build
-
-# Create a default conf to be able to run the container without the
-# /conf volume mounted
-RUN mkdir /conf && echo '- name: Test Docker\n\
+# Build the Go app & Create a default conf to be able to run the
+# container without the /conf volume mounted
+RUN CGO_ENABLED=0 GOOS=linux go build && \
+    mkdir /conf && echo '- name: Test Docker\n\
   pipe:\n\
   - name: Log success Docker\n\
     log:\n\
