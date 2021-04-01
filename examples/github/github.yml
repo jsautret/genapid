@@ -88,6 +88,13 @@
     - chromecast:
         tts: >
           =format("Github push received from %v", R.body.payload.pusher.name)
+    - name: Pull commits
+      command:
+        cmd: git
+        args:
+          - pull
+        chdir: >
+          = "/var/lib/genapid/github/"+ R.body.payload.repository.name
 
 
   - name: pull_request event

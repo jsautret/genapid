@@ -24,12 +24,13 @@ Google Home or as an API broker between several API or IoT services.
     - [Install](#install)
         - [Binary releases](#binary-releases)
         - [Docker](#docker)
-            - [Run the genapi container](#run-the-genapi-container)
+            - [Run the genapid container](#run-the-genapid-container)
         - [Compile from sources](#compile-from-sources)
         - [Ansible](#ansible)
     - [Run](#run)
     - [Configuration](#configuration)
-        - [pipe](#pipe)
+        - [`init`](#init)
+        - [`pipe`](#pipe)
         - [Predicates](#predicates)
             - [Options](#options)
             - [Special predicates](#special-predicates)
@@ -54,8 +55,9 @@ actions.
 
 ### Receive Github Webhook and send Pushbullet notification
 
-The examples shows how to receive a Webhook event and call an external
-API or use Google Home to get a voice notification:
+The examples shows how to receive a Webhook event, mirrors
+repositories and call an external API or use Google Home to get a
+voice notification:
 [examples/github/](examples/github/)
 
 
@@ -234,11 +236,11 @@ Map containing variables set by the `variable` predicate.
 Map containing information about the incoming request received by
 genapid. It has the following fields:
 
-* `URL.Params`: Map containing the URL query parameters.
-* `Mime`: Content-Type
-* `Req`
-  * `Method`: HTTP method
-  * `URL`
-    * `Path`: URL path
-    * `Host`: URL Host
-    * `Scheme`: URL protocol
+* `Method`: HTTP method
+* `URL`
+  * `Path`: URL path
+  * `Host`: URL Host
+  * `Scheme`: URL protocol
+
+Other fields and methods can be used on `In`, see the
+[Request](https://golang.org/pkg/net/http/#Request) doc.

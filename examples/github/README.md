@@ -3,7 +3,7 @@
 This example shows how to receive [events from
 Github](https://docs.github.com/en/developers/webhooks-and-events/webhooks)
 and send notifications using
-[Pushbullet](https://docs.pushbullet.com/) or a Google Home.
+[Pushbullet](https://docs.pushbullet.com/) or a Google Home. You can also keep a local mirror of your repositories.
 
 The full API description file is here: [github.yml](github.yml).
 
@@ -13,7 +13,7 @@ The full API description file is here: [github.yml](github.yml).
 
 [Setup a
 webhook](https://docs.github.com/en/developers/webhooks-and-events/creating-webhooks)
-for your repository with the following parameters:
+for each of your repositories with the following parameters:
 
 * **Payload URL**: URL that point to your genapid instance, with `/github` as path.
 * **Content type**: application/json
@@ -226,5 +226,26 @@ Then in each event sup-pipe, you can use:
             =format("Github pull request received on %v",
             R.body.payload.repository)
 ```
+
+## Local Github repository mirror
+
+To keep an up-to-date local mirror of some Github repositories, you
+can checkout the repositories in a local directory (here
+`/var/lib/genapid/github/`) and use a
+[`command`](../../predicates/command/) predicate in the *push event*
+pipe to get new commits each time someone push something on
+Github:
+
+``` yaml
+    - name: Pull commits
+      command:
+        cmd: git
+        args:
+          - pull
+        chdir: >
+          = "/var/lib/genapid/github/"+ R.body.payload.repository.name
+```
+
+
 
 See [github.yml](github.yml) for the complete API file description.
