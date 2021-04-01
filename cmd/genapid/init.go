@@ -13,23 +13,31 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type initValues []conf.Predicate
+
 func processInit(cfg *conf.Root, c *ctx.Ctx) {
 	if len(*cfg) == 0 {
 		return
 	}
 	i := (*cfg)[0]
-	if i.Init == nil {
+	init, ok := i["init"]
+	if !ok {
+		// not an init statement
 		return
 	}
 	*cfg = (*cfg)[1:] // remove init from the conf
-	if i.Pipe != nil {
-		log.Error().Err(
-			errors.New("'pipe' cannot be used in 'init' section")).Msg("")
+	if len(i) > 1 {
+		log.Error().Err(errors.New("'init' must be used alone")).Msg("")
+		return
+	}
+	predicates := initValues{}
+	if err := init.Decode(&predicates); err != nil {
+		log.Error().Err(errors.New("Invalid values for 'init'")).Msg("")
 		return
 	}
 	log.Info().Msg("Processing init")
-	for j := 0; j < len(i.Init); j++ {
-		result := predicate.Process(log.Logger, &i.Init[j], c)
+	for j := 0; j < len(predicates); j++ {
+		result := predicate.Process(log.Logger, &predicates[j], c)
 		if !result {
 			break
 		}

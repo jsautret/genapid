@@ -342,7 +342,12 @@ func TestRead(t *testing.T) {
 			assert.NotNil(t, r, "Wrong Read")
 			assert.Equal(t, tc.pipes, len(r), "wrong pipe nubmer")
 			for i, p := range r {
-				assert.Equal(t, tc.predicates[i], len(p.Pipe),
+				pipe := p["pipe"]
+				ptr := &pipe
+				predicates := []Predicate{}
+				assert.Nil(t, ptr.Decode(&predicates),
+					"Wrong content of pipe")
+				assert.Equal(t, tc.predicates[i], len(predicates),
 					"wrong predicate nubmer")
 			}
 		})

@@ -47,6 +47,55 @@ func TestFullConf(t *testing.T) {
 			conf:       "",
 		},
 		{
+			name:       "JustPredicates",
+			method:     http.MethodGet,
+			path:       "/JustPredicates",
+			statusCode: http.StatusOK,
+			logFound:   expLog{{"log": "EndJustPredicates"}},
+			conf: `
+- name: "Test JustPredicates"
+  match:
+    string:  AAAAAA
+    value:  "AAAAAA"
+- match:
+    string:  ="CCCCC"
+    value:  CCCCC
+- match:
+    string: '=(-1<0 ? "BBBAAABBB" : "BBBBB")'
+    regexp: "B(A+B)B"
+  register: some_test
+- match:
+    string: =R.some_test.matches[1]
+    value: AAAB
+- log:
+    msg: EndJustPredicates
+`,
+		},
+		{
+			name:        "JustPredicatesOneFalse",
+			method:      http.MethodGet,
+			path:        "/JustPredicatesOneFalse",
+			statusCode:  http.StatusOK,
+			logFound:    expLog{{"log": "BeforeFalse"}},
+			logNotFound: expLog{{"log": "AfterFalse"}},
+			conf: `
+- name: "Test JustPredicatesOneFalse"
+  match:
+    string:  AAAAAA
+    value:  "AAAAAA"
+- match:
+    string:  ="CCCCC"
+    value:  CCCCC
+- log:
+    msg: BeforeFalse
+- match:
+    string: OOOO
+    value: PPPP
+- log:
+    msg: AfterFalse
+`,
+		},
+		{
 			name:       "PipeOfMatch",
 			method:     http.MethodGet,
 			path:       "/PipeOfMatch",
@@ -291,7 +340,7 @@ func TestFullConf(t *testing.T) {
 			statusCode: http.StatusOK,
 			logFound: expLog{
 				{"log": "Start"},
-				{"error": "'pipe' cannot be used in 'init' section"},
+				{"error": "'init' must be used alone"},
 			},
 			logNotFound: expLog{
 				{"log": "Pipe"},
@@ -320,14 +369,13 @@ func TestFullConf(t *testing.T) {
 `,
 		},
 		{
-			name:       "InitInPipe",
+			name:       "InitNotFirst",
 			method:     http.MethodGet,
 			path:       "/InitInPipe",
 			statusCode: http.StatusOK,
 			logFound: expLog{
-				{"log": "Pipe1"},
-				{"error": "Cannot use 'init' with a 'pipe'"},
-				{"log": "Pipe2"},
+				{"log": "Start"},
+				{"error": "Unknown predicate 'init'"},
 			},
 			logNotFound: expLog{
 				{"log": "Init"},
@@ -337,22 +385,16 @@ func TestFullConf(t *testing.T) {
 - name: "Pipe1"
   pipe:
     - log:
-        msg: Pipe1
-- init: # is illegal if not at the start, it won't be evaluated
+        msg: Start
+- init: # is illegal if not at the start
     - log:
         msg: Init
     - variable:
         - name1: value1
         - name2: value2
-  name: Pipe2
-  pipe:
-    - log:
-        msg: Pipe2
-    - match:
-       string: "=V.name1" # error, init was not evaluated
-       value: value1
-    - log:
-        msg: End
+- name: End
+  log:
+    msg: End
 `,
 		},
 	}
@@ -386,11 +428,15 @@ func TestFullConf(t *testing.T) {
 			if checkLog {
 				for _, l := range tc.logFound {
 					for k, v := range l {
+						t.Logf(`Checking '%v: "%v"' in log`,
+							k, v)
 						tst.Entries().ExpStr(k, v)
 					}
 				}
 				for _, l := range tc.logNotFound {
 					for k, v := range l {
+						t.Logf(`Checking '%v: "%v"' not in log`,
+							k, v)
 						tst.Entries().NotExpStr(k, v)
 					}
 				}

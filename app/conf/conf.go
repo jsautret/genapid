@@ -16,18 +16,16 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 // Root maps the main conf file
-type Root []Pipe
+type Root []Predicate
 
 // Pipe maps a pipe in conf file
 type Pipe struct {
-	Name    string
-	Pipe    []Predicate
-	Init    []Predicate
-	Default ctx.Default
+	Name string
+	Pipe []Predicate
 }
 
 // Predicate maps a predicate in conf file
@@ -56,6 +54,10 @@ func ReadFile(filename string) Root {
 func Read(r io.Reader) Root {
 	conf := Root{}
 	d := yaml.NewDecoder(r)
+	if _, ok := reflect.TypeOf(d).MethodByName("SupportIncludeFile"); ok {
+		// if using github.com/DrWrong/yaml
+		d.SupportIncludeFile(true)
+	}
 	if err := d.Decode(&conf); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}

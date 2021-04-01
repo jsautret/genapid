@@ -276,12 +276,12 @@ func pipeHandling(log zerolog.Logger, c *ctx.Ctx, o *pOptions) bool {
 	if o.register != "" {
 		log.Error().Err(
 			errors.New("Cannot set 'register' option on a " +
-				" predicate")).Msg("")
+				" pipe")).Msg("")
 		return false
 	}
 	o.pipe.Name = o.name
 	ProcessPipe(log, &o.pipe, c)
-	// Always continue after a pipe, unless result: option is set
+	// Always continue after a pipe, unless 'result' option is set
 	// and evaluate to false
 	result := true
 	if o.result != "" {
