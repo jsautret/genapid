@@ -6,7 +6,24 @@ on:
       - v*
 
 jobs:
-  goreleaser:
+
+    golangcilint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Check out
+        uses: actions/checkout@v2
+      -
+        name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          version: latest
+
+
+    goreleaser:
+    name: goreleaser
     runs-on: ubuntu-latest
     steps:
       -
@@ -25,6 +42,5 @@ jobs:
         with:
           version: latest
           args: release --rm-dist
-          workdir: ./cmd/genapid
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
