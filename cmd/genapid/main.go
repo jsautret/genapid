@@ -6,6 +6,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,6 +16,14 @@ import (
 	"github.com/jsautret/genapid/ctx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+)
+
+// Version information
+var (
+	buildVersion = "development version"
+	buildCommit  = "unknown"
+	buildDate    = "unknown date"
+	buildSource  = "compiled"
 )
 
 var (
@@ -29,6 +38,7 @@ var (
 	configFileName string
 	SLogLevel      string
 	port           int
+	versionFlag    bool
 )
 
 // Command line flags definitions
@@ -36,6 +46,7 @@ func init() {
 	flag.StringVar(&configFileName, "config", "api.yml", "Config file")
 	flag.StringVar(&SLogLevel, "loglevel", "info", "Log level")
 	flag.IntVar(&port, "port", 9110, "Listening port")
+	flag.BoolVar(&versionFlag, "version", false, "prints current version and exit")
 }
 
 // Main handler for incoming requests
@@ -43,8 +54,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	process(w, r, staticCtx)
 }
 
+func version() {
+	fmt.Printf("genapid %s %s on %s\ncommit %s\n",
+		buildVersion, buildSource, buildDate, buildCommit)
+}
+
 func main() {
 	flag.Parse()
+
+	if versionFlag {
+		version()
+		os.Exit(0)
+	}
 
 	// UNIX Time is faster and smaller than most timestamps
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix

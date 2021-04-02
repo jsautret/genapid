@@ -76,6 +76,9 @@ Binary executable for various platforms can be found here:
 
 https://github.com/jsautret/genapid/releases
 
+Just copy `genapid` or `genapid.exe` in your PATH.
+
+
 ### Docker
 
 Docker container is available on Docker Hub:
@@ -116,14 +119,16 @@ deploy genapid behind an Apache server.
 ## Run
 
 ``` shell
-$ ./cmd/genapid/genapid -h
-Usage of ./cmd/genapid/genapid:
+$ genapid -h
+Usage of genapid:
   -config string
         Config file (default "api.yml")
   -loglevel string
         Log level (default "info")
   -port int
         Listening port (default 9110)
+  -version
+        prints current version and exit
 ```
 
 The valid log levels are:
