@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-    golangcilint:
+  - golangcilint:
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +22,7 @@ jobs:
           version: latest
 
 
-    goreleaser:
+  - goreleaser:
     name: goreleaser
     runs-on: ubuntu-latest
     steps:
