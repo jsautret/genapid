@@ -1,0 +1,15 @@
+# comment
+# comment
+
+- name: included pipe
+  pipe:
+  - inc1:
+     k1: v1
+     k2: v2
+  - include: testdata/3predicates.yml
+  - inc1:
+     k1: v1
+     k2: v2
+  - inc1:
+     k1: v1
+     k2: v2

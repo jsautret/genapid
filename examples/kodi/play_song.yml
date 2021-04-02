@@ -1,0 +1,48 @@
+- name: Play song
+  pipe:
+  - name: Match a phrase asking to play a song
+    match:
+      regexp: =R.strings.content.play_song.regexp
+    register: song
+
+  - name: Get the list of all available songs
+    jsonrpc:
+      procedure: AudioLibrary.GetSongs
+    register: songs
+
+  - name: Get the song ID using a fuzzy search on all titles
+    variable:
+        # get titles from Kodi response with a jsonpath expression
+      - titles:  '= R.songs.response | $.songs[*].label'
+        # get best matching title
+      - title:   '= fuzzy(R.song.named.title, V.titles)'
+        # get id corresponding to matched title
+      - songid: >
+          = jsonpath(format(`$.songs[?(@.label=="%s")].songid`, V.title),
+                     R.songs.response)
+  - name: No song found
+    when: '=len(V.songid) == 0'
+    chromecast:
+      tts: '=format(R.strings.content.play_song.notfound, R.song.named.title)'
+    result: =false # stop here
+
+  - log:      # Log the song that will be played
+      msg: '=format(R.strings.content.play_song.feedback, V.title)'
+
+  - name: Turn on TV # needs json-cec addon installed on Kodi
+    jsonrpc:
+      procedure: Addons.ExecuteAddon
+      params:
+        addonid: script.json-cec
+        params:
+          command: activate
+    result: =true # ignore if addon not installed
+
+  - name: Play the song
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item:
+          songid: "=V.songid[0]"
+
+  result: "=!R.song.result" # Stop here if the phrase was matched

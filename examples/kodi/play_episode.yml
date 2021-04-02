@@ -1,0 +1,60 @@
+- name: Play episode
+  pipe:
+  - name: Match a phrase asking to play a episode
+    match:
+      regexp: =R.strings.content.play_tvshow.regexp
+    register: tvshow
+
+  - name: Get the list of all available tvshows
+    jsonrpc:
+      procedure: VideoLibrary.GetTVShows
+    register: tvshows
+
+  - name: Get the tvshowid using a fuzzy search on all tvshows titles
+    variable:
+      # get titles from Kodi response with a jsonpath expression
+      - titles:  '= R.tvshows.response | $.tvshows[*].label'
+      # get best matching title
+      - title:   '= fuzzy(R.tvshow.named.title, V.titles)'
+      # get id corresponding to matched title
+      - tvshowid: >
+          = jsonpath(format(`$.tvshows[?(@.label=="%s")].tvshowid`, V.title),
+            R.tvshows.response)
+
+  - name: Get the list of all episodes for that tvshow
+    jsonrpc:
+      procedure: VideoLibrary.GetEpisodes
+      params:
+        tvshowid: =V.tvshowid[0]
+        sort: # Sorted by episode number
+          order: ascending
+          method: episode
+          ignorearticle: true
+        properties:
+          - playcount # need playcount to filter out watched episode
+          - episode
+    register: episodes
+
+  - name: Get a list of only unwatched episodes
+    variable:
+      - unwatched: '= R.episodes.response | $.episodes[?(@.playcount==0)].episodeid'
+      - unwatched_label: '= R.episodes.response | $.episodes[?(@.playcount==0)].label'
+
+  - name: No unwatched episode
+    when: '=len(V.unwatched) == 0'
+    chromecast:
+      tts: '=format(R.strings.content.play_tvshow.notfound, V.title)'
+    result: =false # stop here
+
+  - name: Log the tvshow that will be played
+    log:
+      msg: >
+        =format(R.strings.content.play_tvshow.feedback, V.title, V.unwatched_label[0])
+
+  - name: Play episdoe
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item: # Play the first unwatched episode
+          episodeid:  = V.unwatched[0]
+  result: '=!R.tvshow.result' # Stop here if the phrase was matched

@@ -37,8 +37,20 @@ type Params struct {
 	Conf map[string]interface{}
 }
 
-// ReadFile reads the YAML config file and return Root config
-func ReadFile(filename string) Root {
+// ReadConfFile reads the YAML config file and returns Root config
+func ReadConfFile(filename string) Root {
+	cfg := ReadFile(filename)
+	processInclude(cfg)
+	root := Root{}
+	if err := cfg.Decode(&root); err != nil {
+		log.Fatal().Err(err).Msg("Conf file is not a list")
+	}
+	return root
+}
+
+// ReadFile reads the YAML config file and returns document as a
+// yaml.Node
+func ReadFile(filename string) *yaml.Node {
 	log.Info().Str("filename", filename).Msg("Reading configuration file")
 
 	handle, err := os.Open(filename)
@@ -51,17 +63,13 @@ func ReadFile(filename string) Root {
 }
 
 // Read reads the reader as YAML and return Root config
-func Read(r io.Reader) Root {
-	conf := Root{}
+func Read(r io.Reader) *yaml.Node {
+	conf := yaml.Node{}
 	d := yaml.NewDecoder(r)
-	if _, ok := reflect.TypeOf(d).MethodByName("SupportIncludeFile"); ok {
-		// if using github.com/DrWrong/yaml
-		d.SupportIncludeFile(true)
-	}
 	if err := d.Decode(&conf); err != nil {
 		log.Fatal().Err(err).Msg("")
 	}
-	return conf
+	return &conf
 }
 
 // AddDefault adds predicate default parameters to context

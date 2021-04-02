@@ -63,7 +63,7 @@ func main() {
 		log.Info().Str("loglevel", logLevel.String()).Msg("Setting loglevel")
 	}
 
-	config = conf.ReadFile(configFileName)
+	config = conf.ReadConfFile(configFileName)
 	staticCtx = ctx.New()
 	processInit(&config, staticCtx)
 

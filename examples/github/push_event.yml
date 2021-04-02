@@ -1,0 +1,29 @@
+- name: push event
+  pipe:
+
+  - match:
+      value: push
+
+  - log:
+      msg: =format("received push from %v", R.body.payload.pusher.name)
+
+  - name: Pull commits
+    command: # repository must already be cloned in /var/lib/genapid/github/
+      cmd: git
+      args:
+        - pull
+      chdir: '= "/var/lib/genapid/github/"+ R.body.payload.repository.name'
+
+  - name: Pushbullet notification
+    http:
+      body:
+        json:
+          type: note
+          title: github pull request
+          body: >
+            =format("received push from %v", R.body.payload.pusher.name)
+
+  - name: Google Home voice notification
+    chromecast:
+      tts: >
+        =format("Github push received from %v", R.body.payload.pusher.name)

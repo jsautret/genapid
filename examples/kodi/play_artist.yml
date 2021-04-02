@@ -1,0 +1,50 @@
+- name: Play artist
+  pipe:
+  - name: Match a phrase asking to play an artist
+    match:
+      regexp: =R.strings.content.play_artist.regexp
+    register: artist
+
+  - name: Get the list of all available artists
+    jsonrpc:
+      procedure: AudioLibrary.GetArtists
+    register: artists
+
+  - name: Get the artist ID using a fuzzy search on all artists
+    variable:
+        # get artists from Kodi response with a jsonpath expression
+      - artists:  '= R.artists.response | $.artists[*].label'
+        # get best matching artist
+      - artist:   '= fuzzy(R.artist.named.artist, V.artists)'
+        # get id corresponding to matched artist
+      - artistid: >
+          = jsonpath(format(`$.artists[?(@.label=="%s")].artistid`, V.artist),
+                     R.artists.response)
+
+  - name: No artist found
+    when: '=len(V.artistid) == 0'
+    chromecast:
+      tts: '=format(R.strings.content.play_artist.notfound, R.artist.named.artist)'
+    result: =false # stop here
+
+  - log:      # Log the artist that will be played
+      msg: '=format(R.strings.content.play_artist.feedback, V.artist)'
+
+  - name: Turn on TV # needs json-cec addon installed on Kodi
+    jsonrpc:
+      procedure: Addons.ExecuteAddon
+      params:
+        addonid: script.json-cec
+        params:
+          command: activate
+    result: =true # ignore if addon not installed
+
+  - name: Play the artist
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item:
+          artistid: "=V.artistid[0]"
+        options:
+          shuffled: true
+  result: "=!R.artist.result" # Stop here if the phrase was matched

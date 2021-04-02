@@ -1,0 +1,51 @@
+- name: Play genre
+  pipe:
+  - name: Match a phrase asking to play a genre
+    match:
+      regexp: =R.strings.content.play_genre.regexp
+    register: genre
+
+  - name: Get the list of all available genres
+    jsonrpc:
+      procedure: AudioLibrary.GetGenres
+    register: genres
+
+  - name: Get the genre ID using a fuzzy search on all genres
+    variable:
+        # get genres from Kodi response with a jsonpath expression
+      - genres:  '= R.genres.response | $.genres[*].label'
+        # get best matching genre
+      - genre:   '= fuzzy(R.genre.named.genre, V.genres)'
+        # get id corresponding to matched genre
+      - genreid: >
+          = jsonpath(format(`$.genres[?(@.label=="%s")].genreid`, V.genre),
+                     R.genres.response)
+
+  - name: No genre found
+    when: '=len(V.genreid) == 0'
+    chromecast:
+      tts: '=format(R.strings.content.play_genre.notfound, R.genre.named.genre)'
+    result: =false # stop here
+
+  - log:      # Log the genre that will be played
+      msg: '=format(R.strings.content.play_genre.feedback, V.genre)'
+
+  - name: Turn on TV # needs json-cec addon installed on Kodi
+    jsonrpc:
+      procedure: Addons.ExecuteAddon
+      params:
+        addonid: script.json-cec
+        params:
+          command: activate
+    result: =true # ignore if addon not installed
+
+  - name: Play the genre
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item:
+          genreid: "=V.genreid[0]"
+        options:
+          shuffled: true
+
+  result: "=!R.genre.result" # Stop here if the phrase was matched

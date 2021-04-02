@@ -1,2 +1,3 @@
 /cmd/genapid/genapid
 *.html
+/dist/

@@ -1,0 +1,48 @@
+- name: Play album
+  pipe:
+  - name: Match a phrase asking to play an album
+    match:
+      regexp: =R.strings.content.play_album.regexp
+    register: album
+
+  - name: Get the list of all available albums
+    jsonrpc:
+      procedure: AudioLibrary.GetAlbums
+    register: albums
+
+  - name: Get the album ID using a fuzzy search on all titles
+    variable:
+        # get titles from Kodi response with a jsonpath expression
+      - titles:  '= R.albums.response | $.albums[*].label'
+        # get best matching title
+      - title:   '= fuzzy(R.album.named.title, V.titles)'
+        # get id corresponding to matched title
+      - albumid: >
+          = jsonpath(format(`$.albums[?(@.label=="%s")].albumid`, V.title),
+                     R.albums.response)
+
+  - name: No album found
+    when: '=len(V.albumid) == 0'
+    chromecast:
+      tts: '=format(R.strings.content.play_album.notfound, R.album.named.title)'
+    result: =false # stop here
+
+  - log:      # Log the album that will be played
+      msg: '=format(R.strings.content.play_album.feedback, V.title)'
+
+  - name: Turn on TV # needs json-cec addon installed on Kodi
+    jsonrpc:
+      procedure: Addons.ExecuteAddon
+      params:
+        addonid: script.json-cec
+        params:
+          command: activate
+    result: =true # ignore if addon not installed
+
+  - name: Play the album
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item:
+          albumid: "=V.albumid[0]"
+  result: "=!R.album.result" # Stop here if the phrase was matched

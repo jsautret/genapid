@@ -1,0 +1,39 @@
+- name: Play movie
+  pipe:
+  - name: Match a phrase asking to play a movie
+    match:
+      regexp: =R.strings.content.play_movie.regexp
+    register: movie
+
+  - name: Get the list of all available movies
+    jsonrpc:
+      procedure: VideoLibrary.GetMovies
+    register: movies
+
+  - name: Get the movie ID using a fuzzy search on all titles
+    variable:
+        # get titles from Kodi response with a jsonpath expression
+      - titles:  '= R.movies.response | $.movies[*].label'
+        # get best matching title
+      - title:   '= fuzzy(R.movie.named.title, V.titles)'
+        # get id corresponding to matched title
+      - movieid: >
+          = jsonpath(format(`$.movies[?(@.label=="%s")].movieid`, V.title),
+                     R.movies.response)
+
+  - name: Movie not found
+    chromecast:
+      tts: '=format(R.strings.content.play_movie.notfound, R.movie.named.title)'
+    when: '=len(V.movieid) == 0'
+    result: =false # stop here
+
+  - log:      # Log the movie that will be played
+      msg: '=format(R.strings.content.play_movie.feedback, V.title)'
+
+  - name: Play the movie
+    jsonrpc:
+      procedure: Player.Open
+      params:
+        item:
+          movieid: "=V.movieid[0]"
+  result: "=!R.movie.result" # Stop here if the phrase was matched

@@ -1,0 +1,30 @@
+- name: pull_request event
+  pipe:
+
+  - match:
+      value: pull_request
+
+  - log:
+      msg: >
+        =format("received pull_request on %v from %v", pull_request from %v",
+        R.body.payload.action)
+
+  - match:
+      string: =R.body.payload.action
+      value: opened
+
+  - name: Pushbullet notification
+    http:
+      body:
+        json:
+          type: note
+          title: github pull request
+          body: >
+            =format("received pull_request on %v from %v",
+            R.body.payload.repository, R.body.payload.sender.login)
+
+  - name: Google Home voice notification
+    chromecast:
+      tts: >
+        =format("Github pull request received from %v",
+        R.body.payload.pusher.name)

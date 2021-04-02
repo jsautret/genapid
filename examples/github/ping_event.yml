@@ -1,0 +1,14 @@
+- name: ping event
+  pipe:
+  - match:
+      value: ping
+  - log:
+      msg: =format("received ping, %v", R.body.payload.zen)
+
+  - name: Pushbullet notification
+    http:
+      body:
+        json:
+          type: note
+          title: github ping
+          body: =R.body.payload.zen

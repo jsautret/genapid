@@ -8,7 +8,7 @@
 
 - name: Incoming github request
   pipe:
-  - name: github dedicated endpoint
+  - name: Github Webhook endpoint
     match:
       string: =In.URL.Path
       value: /github
@@ -55,71 +55,10 @@
         google_service_account: "path_to/google_service_account.json"
 
   - log:
-      msg: '="event received: "+R.event.value'
+      msg: '= "event received: " + R.event.value'
 
+  - include: "ping_event.yml"
 
-  - name: ping event
-    pipe:
-    - match:
-        value: ping
-    - log:
-        msg: =format("received ping, %v", R.body.payload.zen)
-    - http:
-        body:
-          json:
-            type: note
-            title: github ping
-            body: =R.body.payload.zen
+  - include: "push_event.yml"
 
-
-  - name: push event
-    pipe:
-    - match:
-        value: push
-    - log:
-        msg: =format("received push from %v", R.body.payload.pusher.name)
-    - http:
-        body:
-          json:
-            type: note
-            title: github pull request
-            body: >
-              =format("received push from %v", R.body.payload.pusher.name)
-    - chromecast:
-        tts: >
-          =format("Github push received from %v", R.body.payload.pusher.name)
-    - name: Pull commits
-      command:
-        cmd: git
-        args:
-          - pull
-        chdir: >
-          = "/var/lib/genapid/github/"+ R.body.payload.repository.name
-
-
-  - name: pull_request event
-    pipe:
-    - match:
-        value: pull_request
-    - log:
-        msg: >
-          =format("received pull_request on %v from %v", pull_request from %v",
-          R.body.payload.action)
-
-    - match:
-        string: =R.body.payload.action
-        value: opened
-
-    - http:
-        body:
-          json:
-            type: note
-            title: github pull request
-            body: >
-              =format("received pull_request on %v from %v",
-              R.body.payload.repository, R.body.payload.sender.login)
-
-    - chromecast:
-        tts: >
-          =format("Github pull request received from %v",
-          R.body.payload.pusher.name)
+  - include: "pull_request_event.yml"

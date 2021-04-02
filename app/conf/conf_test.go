@@ -28,7 +28,7 @@ type params struct {
 	N      int
 }
 
-func TestConf(t *testing.T) {
+func TestGetPredicateParams(t *testing.T) {
 	cases := []struct {
 		name     string
 		conf     string
@@ -332,6 +332,31 @@ func TestRead(t *testing.T) {
 			pipes:      2,
 			predicates: []int{2, 1},
 		},
+		{
+			name: "Include",
+			conf: `
+# comment
+# comment
+
+- name: pipe1
+  pipe:
+    - predicate1:
+       k1: v1
+       k2: v2
+    - include: testdata/3predicates.yml
+    # comment
+    - predicate2:
+       k1: v1
+       k2: v2
+# comment
+- include: testdata/pipe6predicates.yml
+- name: pipe2
+  pipe:
+    - include: testdata/3predicates.yml
+`,
+			pipes:      3,
+			predicates: []int{5, 6, 3},
+		},
 	}
 	zerolog.SetGlobalLevel(logLevel)
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).
@@ -340,8 +365,15 @@ func TestRead(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Read(strings.NewReader(tc.conf))
 			assert.NotNil(t, r, "Wrong Read")
-			assert.Equal(t, tc.pipes, len(r), "wrong pipe nubmer")
-			for i, p := range r {
+			processInclude(r)
+			cfg := Root{}
+			assert.Nil(t, r.Decode(&cfg))
+			if err := r.Decode(&cfg); err != nil {
+				log.Fatal().Err(err).Msg("Conf file is not a list")
+			}
+
+			assert.Equal(t, tc.pipes, len(cfg), "wrong pipe nubmer")
+			for i, p := range cfg {
 				pipe := p["pipe"]
 				ptr := &pipe
 				predicates := []Predicate{}

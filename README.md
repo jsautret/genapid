@@ -30,6 +30,7 @@ Google Home or as an API broker between several API or IoT services.
     - [Run](#run)
     - [Configuration](#configuration)
         - [`init`](#init)
+        - [`include`](#include)
         - [`pipe`](#pipe)
         - [Predicates](#predicates)
             - [Options](#options)
@@ -53,9 +54,9 @@ actions.
 
 ## Examples
 
-### Receive Github Webhook and send Pushbullet notification
+### Github Webhooks and Pushbullet notifications
 
-The examples shows how to receive a Webhook event, mirrors
+The examples shows how to receive a Webhook event from Github, mirrors
 repositories and call an external API or use Google Home to get a
 voice notification:
 [examples/github/](examples/github/)
@@ -67,18 +68,17 @@ Control Kodi by voice using a Google Home and receive voice feedback:
 [examples/kodi/](examples/kodi/)
 
 
-
 ## Install
 
 ### Binary releases
 
-Binary execs for various platforms are available here:
+Binary executable for various platforms can be found here:
 
 https://github.com/jsautret/genapid/releases
 
 ### Docker
 
-Docker containers are available on Docker Hub:
+Docker container is available on Docker Hub:
 
 https://hub.docker.com/repository/docker/jsautret/genapid/general
 
@@ -86,7 +86,7 @@ https://hub.docker.com/repository/docker/jsautret/genapid/general
 #### Run the genapid container
 
 The configuration file that describes your API must be named `api.yml`
-and placed in a directory that you have to mount on `/conf` volume and
+and placed in a directory that you have to mount on `/conf` volume;
 port 8080 must be mapped with a local port:
 
 ``` shell
@@ -142,7 +142,7 @@ the `-config` option.
 
 There is some examples in [examples/](examples/) directory.
 
-The main structure is a list of [pipes](#pipe). Each pipe is evaluated for each incoming request.
+The main structure is a list of [predicates](#predicates). Each predicate is evaluated for each incoming request.
 
 ### `init`
 
@@ -153,22 +153,33 @@ data from a file and populate the context once for all and not for
 every request. See the beginning of
 [`github.yml`](examples/github/github.yml) for an example.
 
+### `include`
+
+An `include` statement can be used everywhere a predicate is allowed. It is replaced by the content of the YAML file when genapid starts.
+
+``` yaml
+- include: inc.yml
+```
+
+See the end of
+[`github.yml`](examples/github/github.yml) for an example.
+
 ### `pipe`
 
-The API description file is a list of `pipe` elements. Each `pipe`
+A `pipe` can be used everywhere a predicate is allowed. Each `pipe`
 contains a list of predicates or sub-pipes. The `name` and `result`
-options can be used on `pipe` (see below for the description of
-these options).
+options can be used on `pipe` (see below for the description of these
+options).
 
 The result of a `pipe`is always true, unless `result` option is set.
 
 ### Predicates
 
-Each predicate in a pipe is evaluated for an give incoming
-request. When a predicate returns false, the following predicates in
+The predicates are evaluated for each incoming request received by
+genapid. When a predicate returns false, the following predicates in
 the pipe are ignored and the next pipe in the conf is evaluated.
 
-The list of predicates types is in [predicates/](predicates/). There is also
+The available predicate types are listed in [predicates/](predicates/). There is also
 some [additional predicates](#special-predicates) described below.
 
 Each predicates has it own specific parameters described in its documentation.
@@ -180,7 +191,7 @@ The following options can be set on predicates:
 | Name     | Type    | Description                                     |
 | ---      | ---     | ---                                             |
 | `name`   | string  | Used for documenting and logs readability only. |
-| `result` | boolean | Force the result value of the predicate         |
+| `result` | boolean | Force the result value of the predicate.        |
 | `when`   | boolean | If false, the predicate evaluation is skipped.  |
 | `register` | string  | Store the results set by the predicate. This data can be accessed in following predicates with the `R` map. For example, if you set option `register: myresult`, the data set by the predicate can then be accessed with `R.myresult` which is a map. The `result` key will contain the boolean result of the predicate (real one, not the one set with the `result`option). So `R.myresult.result` can be used to check the result of the predicate. Some predicate may provide additional fields described in their documentation. |
 
@@ -204,7 +215,8 @@ log:
 ##### `default`
 Used to set default parameters for predicates. Expressions are
 evaluated when the predicate is evaluated, not when `default` is
-evaluated.
+evaluated. Values set by `default` in a pipe are not available
+outside that pipe.
 
 Example:
 ``` yaml
@@ -221,7 +233,7 @@ sign), it will be evaluated as a [Gval
 expression](https://github.com/PaesslerAG/gval). If the evaluation of
 an expression fails, the predicate returns false.
 
-The Following data is accessible in those expressions:
+The Following context is accessible in those expressions:
 
 #### `R`
 

@@ -1,10 +1,5 @@
 module github.com/jsautret/genapid
 
-// to be removed if this PR goes in upstream:
-// https://github.com/go-yaml/yaml/pull/635
-//replace gopkg.in/yaml.v3 => github.com/DrWrong/yaml v0.0.0-20200724065318-b1b4d73d1a1e
-replace gopkg.in/yaml.v3 => /Users/jerome/src/yaml
-
 go 1.14
 
 require (
